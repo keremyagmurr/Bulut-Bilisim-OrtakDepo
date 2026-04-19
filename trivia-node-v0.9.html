@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trivia Node — Pro Build v0.9</title>
+<style>
+  :root {
+    --bg: #05070a;
+    --card-bg: rgba(13, 17, 23, 0.95);
+    --primary: #4ade80;
+    --secondary: #60a5fa;
+    --accent: #f59e0b;
+    --error: #f87171;
+    --text: #e2e8f0;
+    --border: #30363d;
+    --glow: rgba(74, 222, 128, 0.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { 
+    font-family: 'Inter', system-ui, sans-serif; 
+    background: var(--bg); 
+    color: var(--text); 
+    min-height: 100vh; 
+    overflow: hidden;
+    background-image: radial-gradient(circle at 50% 50%, #0d1117 0%, #05070a 100%);
+  }
+
+  /* Animasyonlu Grid Arkaplan */
+  body::before {
+    content: ""; position: fixed; top: 0; left: 0; width: 200%; height: 200%;
+    background-image: linear-gradient(#1e2330 1.5px, transparent 1.5px), linear-gradient(90deg, #1e2330 1.5px, transparent 1.5px);
+    background-size: 60px 60px; opacity: 0.15; z-index: -1;
+    animation: gridMove 60s linear infinite;
+  }
+  @keyframes gridMove { from { transform: translate(0, 0); } to { transform: translate(-50%, -50%); } }
+
+  .screen { display: none; min-height: 100vh; padding: 20px; animation: slideUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+  .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  /* LOBBY & PANELS */
+  .logo { font-size: 4rem; font-weight: 900; margin-bottom: 5px; text-shadow: 0 0 30px var(--glow); letter-spacing: -3px; }
+  .logo span.k { color: var(--primary); }
+  .logo span.t { color: var(--secondary); }
+  
+  .panel { 
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 28px; padding: 40px; width: 100%; max-width: 500px; 
+    box-shadow: 0 20px 80px rgba(0,0,0,0.8); position: relative; backdrop-filter: blur(12px);
+  }
+  .panel::after { content: ""; position: absolute; inset: -1px; border-radius: 28px; padding: 1px; background: linear-gradient(45deg, var(--primary), transparent, var(--secondary)); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+
+  input { width: 100%; background: rgba(1, 4, 9, 0.8); border: 2px solid var(--border); border-radius: 16px; padding: 18px; color: white; font-size: 1.1rem; margin-bottom: 20px; transition: 0.3s; outline: none; text-align: center; }
+  input:focus { border-color: var(--primary); box-shadow: 0 0 20px var(--glow); }
+  
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+  .role-card { background: rgba(1, 4, 9, 0.5); border: 2px solid var(--border); border-radius: 16px; padding: 20px; cursor: pointer; text-align: center; transition: 0.4s; font-weight: 600; color: #8b949e; }
+  .role-card.selected { border-color: var(--primary); background: rgba(74, 222, 128, 0.1); color: var(--primary); box-shadow: inset 0 0 15px rgba(74, 222, 128, 0.1); }
+
+  .btn { width: 100%; padding: 20px; border-radius: 16px; border: none; font-size: 1.1rem; font-weight: 900; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 2px; }
+  .btn-primary { background: var(--primary); color: #05070a; box-shadow: 0 10px 25px rgba(74, 222, 128, 0.3); }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(74, 222, 128, 0.5); }
+  .btn-primary:disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
+
+  /* INGRESS */
+  .ing-box { background: var(--card-bg); border: 1px solid var(--secondary); border-radius: 32px; padding: 50px; width: 100%; max-width: 600px; text-align: center; backdrop-filter: blur(15px); }
+  .pod-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 30px 0; }
+  .pod-item { background: rgba(1, 4, 9, 0.6); border: 2px solid var(--border); border-radius: 18px; padding: 20px; cursor: pointer; transition: 0.3s; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+  .pod-item.active { border-color: var(--primary); background: rgba(74, 222, 128, 0.15); color: var(--primary); transform: scale(1.05); }
+
+  /* QUESTION SCREEN */
+  .q-wrap { width: 100%; max-width: 850px; }
+  .q-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 32px; padding: 45px; margin-bottom: 30px; border-top: 8px solid var(--primary); box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+  
+  .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .opt { background: rgba(22, 27, 34, 0.8); border: 2px solid var(--border); border-radius: 20px; padding: 25px; cursor: pointer; transition: 0.25s; font-weight: 700; font-size: 1.1rem; }
+  .opt:hover { border-color: var(--secondary); background: #1c2128; transform: translateY(-2px); }
+  .opt.correct { border-color: var(--primary) !important; background: rgba(74, 222, 128, 0.2) !important; color: var(--primary); }
+  .opt.wrong { border-color: var(--error) !important; background: rgba(248, 113, 113, 0.2) !important; color: var(--error); }
+  .opt.disabled { pointer-events: none; opacity: 0.5; }
+
+  /* RESULT BOARD */
+  .leaderboard-row { display: flex; align-items: center; justify-content: space-between; padding: 18px 25px; background: rgba(13, 17, 23, 0.6); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; }
+  .leaderboard-row:nth-child(1) { border-color: var(--accent); background: rgba(245, 158, 11, 0.1); border-width: 2px; }
+
+  /* SCORE POPUP */
+  .score-popup { position: fixed; top: 45%; left: 50%; transform: translate(-50%, -50%); font-size: 6rem; font-weight: 900; z-index: 2000; pointer-events: none; animation: scoreUp 1.3s ease-out forwards; display: none; }
+  @keyframes scoreUp { 0% { opacity: 0; transform: translate(-50%, 20px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -150px); } }
+
+  .footer { width: 100%; max-width: 850px; display: flex; justify-content: space-between; padding: 25px; background: var(--card-bg); border-radius: 20px; border: 1px solid var(--border); margin-top: 30px; }
+</style>
+</head>
+<body>
+
+<div id="score-anim" class="score-popup"></div>
+
+<div id="lobby" class="screen active">
+  <div class="logo"><span class="k">TRIVIA</span><span class="t">NODE</span></div>
+  <div style="color:var(--secondary); font-family:monospace; margin-bottom:30px; letter-spacing: 2px;">BUILD v0.9 // CLUSTER_INIT</div>
+  <div class="panel">
+    <input type="text" id="p-name" placeholder="NODE_ID_NAME" maxlength="14" autocomplete="off">
+    <div class="role-grid">
+      <div id="role-pod" class="role-card selected" onclick="setRole('pod')">POD_NODE</div>
+      <div id="role-ingress" class="role-card" onclick="setRole('ingress')">INGRESS_MGR</div>
+    </div>
+    <button class="btn btn-primary" onclick="join()">Node Kaydet</button>
+    <div id="p-list" style="margin-top: 25px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;"></div>
+    <button id="start-btn" class="btn btn-primary" style="margin-top:25px; background:var(--secondary);" disabled onclick="start()">Sistemi Boot Et</button>
+  </div>
+</div>
+
+<div id="ingress-screen" class="screen">
+  <div class="ing-box">
+    <div style="font-family: monospace; color: var(--secondary); letter-spacing: 4px; font-size:0.9rem; margin-bottom: 20px;">> TRAFFIC_ANALYTICS_INBOUND</div>
+    <h1 id="ing-cat" style="font-size: 3.5rem; text-shadow: 0 0 20px var(--secondary);">...</h1>
+    
+    <div id="captain-ui" style="display: none; margin-top: 30px;">
+        <p style="color:#8b949e; margin-bottom: 15px;">Target Node Seçimi Bekleniyor...</p>
+        <div id="pod-grid" class="pod-grid"></div>
+        <button id="route-btn" class="btn btn-primary" disabled onclick="confirmRoute()">İsteği Yönlendir (Forward)</button>
+    </div>
+
+    <div id="auto-ui" style="margin-top: 40px; color: var(--accent); font-family:monospace; font-size: 1.2rem;">
+        <div class="loading-dots">ROUTING_ALGORITHM_COMPUTING</div>
+    </div>
+  </div>
+</div>
+
+<div id="question-screen" class="screen">
+  <div class="q-wrap">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:25px;">
+      <div>
+          <div id="q-category" style="color:var(--secondary); font-weight:900; letter-spacing:2px; font-size: 1.2rem;">CAT</div>
+          <div id="q-node-info" style="color:#64748b; font-family:monospace; font-size:0.8rem; margin-top: 5px;">NODE: PROCESS_PENDING</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.8rem; color:#64748b; font-family:monospace;">TTL_REMAINING</div>
+        <div id="timer-val" style="font-size:2.2rem; font-weight:900; color:var(--secondary);">15</div>
+      </div>
+    </div>
+    <div class="q-card"><h2 id="q-text" style="line-height:1.5; font-size: 1.6rem;">...</h2></div>
+    <div id="opt-grid" class="opt-grid"></div>
+    <div class="footer">
+      <div id="log-text" style="font-family:monospace; font-size:0.95rem; color: var(--primary);">[LOG]: Waiting for input...</div>
+      <div id="http-status" class="http-code" style="background: rgba(255,255,255,0.05); color: #8b949e; padding: 5px 15px; border-radius: 8px; font-weight: bold;">IDLE</div>
+    </div>
+  </div>
+</div>
+
+<div id="result-screen" class="screen">
+  <div class="panel" style="max-width: 600px;">
+    <div style="text-align:center; margin-bottom:30px;">
+      <h1 style="color:var(--primary); font-size:2.5rem; letter-spacing:-1px;">DIAGNOSTIC_COMPLETE</h1>
+      <p style="color:#64748b; font-family:monospace; margin-top: 5px;">Cluster health report summarized below.</p>
+    </div>
+    <div id="leaderboard"></div>
+    <button class="btn btn-primary" onclick="location.reload()" style="margin-top:35px; background:var(--text); color:var(--bg)">Re-Initialize Cluster</button>
+  </div>
+</div>
+
+<script>
+const DB = [
+  { c: "Kubernetes", q: "Cluster içindeki verilerin (state) tutulduğu ana bileşen?", o: ["Etcd", "Scheduler", "Kubelet", "CoreDNS"], a: 0 },
+  { c: "Docker", q: "Birden fazla container'ı tek dosyadan yönetmeye yarayan araç?", o: ["Docker Compose", "Docker Swarm", "Docker Image", "Dockerfile"], a: 0 },
+  { c: "Azure", q: "Azure'da şifre ve anahtarların güvenli tutulduğu servis?", o: ["Key Vault", "Blob Storage", "Active Directory", "Sentinel"], a: 0 },
+  { c: "DevOps", q: "Kodu her an yayına hazır tutma felsefesi?", o: ["Continuous Delivery", "Agile", "Waterfall", "Unit Testing"], a: 0 },
+  { c: "Network", q: "L7 (Application) seviyesinde yük dengeleme yapan K8s objesi?", o: ["Ingress", "ClusterIP", "NodePort", "ConfigMap"], a: 0 }
+];
+
+let players = [], myRole = 'pod', currentQ = 0, qList = [], timer = null, selectedPod = null, isAnswering = false;
+
+function setRole(r) {
+  myRole = r;
+  document.getElementById('role-pod').classList.toggle('selected', r === 'pod');
+  document.getElementById('role-ingress').classList.toggle('selected', r === 'ingress');
+}
+
+function join() {
+  const input = document.getElementById('p-name');
+  const name = input.value.trim();
+  if(!name || players.some(p => p.n === name)) return;
+  if(myRole === 'ingress' && players.some(p => p.r === 'ingress')) return alert("Grup için yalnızca bir Ingress Manager atanabilir!");
+  
+  players.push({ n: name, r: myRole, s: 0 });
+  renderPlayers();
+  input.value = ""; input.focus();
+}
+
+function renderPlayers() {
+  document.getElementById('p-list').innerHTML = players.map(p => `
+    <span style="background:rgba(22, 27, 34, 0.8); padding:10px 20px; border-radius:30px; font-size:0.9rem; border:1px solid var(--border); font-weight:700; color: ${p.r === 'ingress' ? 'var(--secondary)' : 'var(--text)'};">
+      ${p.r === 'ingress' ? '⇄ ' : '⬡ '} ${p.n}
+    </span>`).join('');
+  document.getElementById('start-btn').disabled = players.filter(p => p.r === 'pod').length < 2;
+}
+
+function start() {
+  qList = [...DB].sort(() => 0.5 - Math.random());
+  currentQ = 0;
+  showIngress();
+}
+
+function showIngress() {
+  showScreen('ingress-screen');
+  isAnswering = false;
+  selectedPod = null; // Reset selection
+  const q = qList[currentQ];
+  document.getElementById('ing-cat').innerText = q.c;
+  
+  const captain = players.find(p => p.r === 'ingress');
+  if(captain) {
+    document.getElementById('captain-ui').style.display = 'block';
+    document.getElementById('auto-ui').style.display = 'none';
+    document.getElementById('route-btn').disabled = true; // Kilitli başlar
+    document.getElementById('pod-grid').innerHTML = players.filter(p => p.r === 'pod').map(p => `
+        <div class="pod-item" onclick="pickPod(this, '${p.n}')">${p.n}</div>
+    `).join('');
+  } else {
+    document.getElementById('captain-ui').style.display = 'none';
+    document.getElementById('auto-ui').style.display = 'block';
+    const pods = players.filter(p => p.r === 'pod');
+    const target = pods[currentQ % pods.length].n;
+    setTimeout(() => showQuestion(target), 2000);
+  }
+}
+
+function pickPod(el, name) {
+  document.querySelectorAll('.pod-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  selectedPod = name;
+  document.getElementById('route-btn').disabled = false; // Seçim yapılınca açılır
+}
+
+function confirmRoute() {
+  if(!selectedPod) return;
+  showQuestion(selectedPod);
+}
+
+function showQuestion(podName) {
+  showScreen('question-screen');
+  isAnswering = false;
+  const q = qList[currentQ];
+  document.getElementById('q-category').innerText = q.c;
+  document.getElementById('q-node-info').innerText = `PROCESS_TARGET_NODE: ${podName.toUpperCase()}`;
+  document.getElementById('q-text').innerText = q.q;
+  document.getElementById('opt-grid').innerHTML = q.o.map((o, i) => `<div class="opt" onclick="answer(${i}, '${podName}')">${o}</div>`).join('');
+  
+  updateStatus("IDLE", "Waiting for input...", "initial");
+  startTimer(podName);
+}
+
+function startTimer(podName) {
+  let left = 15;
+  document.getElementById('timer-val').style.color = "var(--secondary)";
+  timer = setInterval(() => {
+    left--;
+    document.getElementById('timer-val').innerText = left;
+    if(left <= 5) document.getElementById('timer-val').style.color = "var(--error)";
+    if(left <= 0) { clearInterval(timer); answer(-1, podName); }
+  }, 1000);
+}
+
+function answer(idx, name) {
+  if(isAnswering) return;
+  isAnswering = true;
+  clearInterval(timer);
+  document.querySelectorAll('.opt').forEach(el => el.classList.add('disabled'));
+
+  const q = qList[currentQ];
+  const isCorrect = idx === q.a;
+  
+  if(isCorrect) {
+    players.find(p => p.n === name).s += 100;
+    const cap = players.find(p => p.r === 'ingress');
+    if(cap && selectedPod === name) cap.s += 50; // Doğru yönlendirme bonusu
+    
+    showScoreAnim("+100", "var(--primary)");
+    document.getElementById('opt-grid').children[idx].classList.add('correct');
+    updateStatus("200 OK", "Request Processed Successfully.", "c-200");
+  } else {
+    players.find(p => p.n === name).s = Math.max(0, players.find(p => p.n === name).s - 50);
+    showScoreAnim("-50", "var(--error)");
+    if(idx !== -1) document.getElementById('opt-grid').children[idx].classList.add('wrong');
+    document.getElementById('opt-grid').children[q.a].classList.add('correct');
+    updateStatus("500 ERROR", idx === -1 ? "Response Timeout (408)" : "Payload Integrity Fault.", "c-500");
+  }
+
+  setTimeout(() => {
+    currentQ++;
+    if(currentQ < qList.length) showIngress();
+    else finish();
+  }, 2500);
+}
+
+function showScoreAnim(text, color) {
+  const anim = document.getElementById('score-anim');
+  anim.innerText = text;
+  anim.style.color = color;
+  anim.style.display = 'block';
+  setTimeout(() => anim.style.display = 'none', 1200);
+}
+
+function updateStatus(code, log, cls) {
+  const s = document.getElementById('http-status');
+  s.innerText = code; s.className = `http-code ${cls}`;
+  document.getElementById('log-text').innerText = `[LOG]: ${log}`;
+}
+
+function finish() {
+  showScreen('result-screen');
+  players.sort((a,b) => b.s - a.s);
+  document.getElementById('leaderboard').innerHTML = players.map((p, i) => `
+    <div class="leaderboard-row">
+      <span style="font-weight:900; font-family:monospace; color:var(--secondary);">#0${i+1}</span>
+      <span style="flex:1; margin-left:20px; font-weight:700;">${p.n} <small style="color:#64748b; font-size:0.7rem;">[${p.r.toUpperCase()}]</small></span>
+      <span style="color:var(--primary); font-weight:900;">${p.s} PTS</span>
+    </div>
+  `).join('');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
