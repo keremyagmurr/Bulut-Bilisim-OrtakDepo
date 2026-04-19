@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trivia Node — Kubernetes Quiz</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; overflow-x: hidden; }
+
+  .screen { display: none; min-height: 100vh; padding: 20px; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  /* LOBBY */
+  #lobby { background: linear-gradient(135deg, #0f1117 0%, #1a1f2e 100%); }
+  .logo { font-size: 2.8rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+  .logo span.k { color: #4ade80; }
+  .logo span.t { color: #60a5fa; }
+  .tagline { color: #94a3b8; font-size: 0.95rem; margin-bottom: 40px; }
+  .player-join { background: #1e2330; border: 1px solid #2d3548; border-radius: 16px; padding: 32px; width: 100%; max-width: 420px; }
+  .player-join h2 { font-size: 1.1rem; color: #94a3b8; margin-bottom: 20px; font-weight: 500; }
+  .input-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .input-row input { flex: 1; background: #0f1117; border: 1px solid #2d3548; border-radius: 10px; padding: 12px 16px; color: #e2e8f0; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+  .input-row input:focus { border-color: #4ade80; }
+  .role-select { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .role-btn { background: #0f1117; border: 2px solid #2d3548; border-radius: 10px; padding: 10px; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .role-btn:hover { border-color: #4ade80; }
+  .role-btn.selected { border-color: #4ade80; background: #0d2818; }
+  .role-btn .role-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+  .role-btn .role-name { font-size: 0.8rem; color: #94a3b8; }
+  .role-btn.selected .role-name { color: #4ade80; }
+  .btn-join { width: 100%; background: #4ade80; color: #0a1a0f; border: none; border-radius: 10px; padding: 14px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .btn-join:hover { background: #22c55e; }
+  .players-list { margin-top: 20px; width: 100%; max-width: 420px; }
+  .players-list h3 { font-size: 0.85rem; color: #64748b; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .player-tag { display: inline-flex; align-items: center; gap: 6px; background: #1e2330; border: 1px solid #2d3548; border-radius: 20px; padding: 6px 14px; margin: 4px; font-size: 0.85rem; }
+  .player-tag .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
+  .player-tag .role-badge { font-size: 0.7rem; color: #60a5fa; background: #0d1f3a; border-radius: 4px; padding: 1px 6px; }
+  .btn-start { margin-top: 20px; background: transparent; border: 2px solid #60a5fa; color: #60a5fa; border-radius: 10px; padding: 12px 32px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-start:hover:not(:disabled) { background: #60a5fa; color: #0a0f1e; }
+  .btn-start:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* INGRESS — Kaptan seçim ekranı */
+  #ingress-screen { background: #0a0f1e; }
+  .ingress-box { background: #1e2330; border: 1px solid #2d3548; border-radius: 20px; padding: 36px; max-width: 520px; width: 100%; text-align: center; }
+  .ingress-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: #60a5fa; margin-bottom: 12px; }
+  .ingress-label { font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; }
+  .ing-diff-row { margin-bottom: 24px; }
+
+  /* Kaptan bekleme modu (Ingress yokken) */
+  .routing-anim { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 20px 0; flex-wrap: wrap; }
+  .node-box { background: #0f1117; border: 2px solid #2d3548; border-radius: 12px; padding: 12px 18px; font-size: 0.85rem; }
+  .node-box.active { border-color: #4ade80; color: #4ade80; animation: nodepulse 1s infinite; }
+  @keyframes nodepulse { 0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.3); } 50% { box-shadow: 0 0 0 8px rgba(74,222,128,0); } }
+  .arrow { color: #60a5fa; font-size: 1.2rem; }
+  .routing-msg { color: #94a3b8; font-size: 0.9rem; margin-top: 12px; }
+  .routing-msg span { color: #f59e0b; font-weight: 600; }
+  .ing-countdown { color: #64748b; font-size: 0.85rem; margin-top: 10px; min-height: 20px; }
+
+  /* Kaptan seçim modu */
+  .captain-panel { display: none; }
+  .captain-panel.active { display: block; }
+  .captain-label { font-size: 0.85rem; color: #60a5fa; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .captain-instruction { font-size: 0.95rem; color: #94a3b8; margin-bottom: 20px; }
+  .captain-instruction strong { color: #e2e8f0; }
+  .pod-select-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .pod-select-btn { background: #0f1117; border: 2px solid #2d3548; border-radius: 12px; padding: 14px 10px; cursor: pointer; transition: all 0.2s; text-align: center; color: #e2e8f0; }
+  .pod-select-btn:hover { border-color: #60a5fa; background: #111827; }
+  .pod-select-btn.chosen { border-color: #4ade80; background: #0d2818; color: #4ade80; }
+  .pod-select-btn .pod-name { font-size: 0.95rem; font-weight: 600; display: block; margin-bottom: 4px; }
+  .pod-select-btn .pod-score { font-size: 0.75rem; color: #64748b; }
+  .pod-select-btn.chosen .pod-score { color: #4ade80; }
+  .btn-confirm-route { width: 100%; background: #60a5fa; color: #0a0f1e; border: none; border-radius: 10px; padding: 14px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; opacity: 0.4; pointer-events: none; }
+  .btn-confirm-route.ready { opacity: 1; pointer-events: auto; }
+  .btn-confirm-route.ready:hover { background: #3b82f6; }
+  .captain-hint { font-size: 0.78rem; color: #475569; margin-top: 10px; }
+
+  /* Routing animasyonu (kaptan sonrası) */
+  .routing-panel { display: none; }
+  .routing-panel.active { display: block; }
+
+  /* QUESTION */
+  #question-screen { background: #0a0f1e; }
+  .q-header { width: 100%; max-width: 700px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 4px; }
+  .q-meta .cat { color: #60a5fa; font-weight: 600; font-size: 0.85rem; }
+  .q-meta .q-diff { padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
+  .diff-easy { background: #0d2818; color: #4ade80; }
+  .diff-medium { background: #1c1200; color: #f59e0b; }
+  .diff-hard { background: #1a0a0a; color: #f87171; }
+  .timer-ring { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+  .timer-ring svg { transform: rotate(-90deg); display: block; }
+  .timer-num { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 1rem; font-weight: 700; }
+  .q-card { background: #1e2330; border: 1px solid #2d3548; border-radius: 20px; padding: 32px; max-width: 700px; width: 100%; margin-bottom: 24px; }
+  .q-pod-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 0.8rem; color: #94a3b8; }
+  .pod-icon { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: nodepulse 1s infinite; flex-shrink: 0; }
+  .q-text { font-size: 1.2rem; font-weight: 600; line-height: 1.5; }
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 700px; width: 100%; }
+  .opt-btn { background: #1e2330; border: 2px solid #2d3548; border-radius: 14px; padding: 18px 20px; cursor: pointer; transition: all 0.2s; text-align: left; font-size: 0.95rem; color: #e2e8f0; display: flex; align-items: center; gap: 12px; }
+  .opt-btn:hover { border-color: #60a5fa; background: #111827; }
+  .opt-btn.correct { border-color: #4ade80 !important; background: #0d2818 !important; color: #4ade80 !important; }
+  .opt-btn.wrong { border-color: #f87171 !important; background: #1a0808 !important; color: #f87171 !important; }
+  .opt-btn.locked { pointer-events: none; cursor: default; }
+  .opt-letter { width: 30px; height: 30px; border-radius: 8px; background: #0f1117; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+  .status-bar { width: 100%; max-width: 700px; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 0 4px; font-size: 0.8rem; color: #64748b; }
+  .http-badge { padding: 3px 10px; border-radius: 6px; font-family: monospace; font-weight: 600; font-size: 0.8rem; }
+  .http-200 { background: #0d2818; color: #4ade80; }
+  .http-err { background: #1a0808; color: #f87171; }
+  .http-pending { background: #1c1200; color: #f59e0b; }
+
+  /* WAITING */
+  #waiting-screen { background: #0a0f1e; }
+  .waiting-box { text-align: center; max-width: 420px; width: 100%; }
+  .waiting-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
+  .waiting-sub { color: #94a3b8; margin-bottom: 32px; }
+  .spinner { width: 48px; height: 48px; border: 3px solid #2d3548; border-top-color: #60a5fa; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .cluster-viz { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
+  .mini-pod { background: #1e2330; border: 1px solid #2d3548; border-radius: 10px; padding: 8px 14px; font-size: 0.8rem; transition: all 0.3s; }
+  .mini-pod.active-pod { border-color: #4ade80; color: #4ade80; animation: nodepulse 1s infinite; }
+  .mini-pod.ingress-pod { border-color: #60a5fa; color: #60a5fa; }
+  .waiting-captain-note { margin-top: 20px; background: #111827; border: 1px solid #1e3a5f; border-radius: 12px; padding: 14px 18px; font-size: 0.85rem; color: #60a5fa; }
+
+  /* RESULT */
+  #result-screen { background: #0a0f1e; }
+  .result-box { background: #1e2330; border: 1px solid #2d3548; border-radius: 20px; padding: 40px; max-width: 500px; width: 100%; text-align: center; }
+  .result-icon { font-size: 3rem; margin-bottom: 12px; }
+  .result-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+  .result-sub { color: #94a3b8; margin-bottom: 28px; font-size: 0.9rem; }
+  .score-display { background: #0f1117; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+  .score-num { font-size: 2.5rem; font-weight: 800; color: #4ade80; }
+  .score-label { color: #64748b; font-size: 0.85rem; margin-top: 4px; }
+  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 8px; margin-bottom: 24px; }
+  .podium-item { text-align: center; }
+  .podium-bar { border-radius: 8px 8px 0 0; width: 72px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; color: #0a0f1e; }
+  .podium-name { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 72px; }
+  .btn-restart { background: #4ade80; color: #0a1a0f; border: none; border-radius: 10px; padding: 14px 32px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .btn-restart:hover { background: #22c55e; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a0808; border: 1px solid #f87171; color: #f87171; padding: 10px 20px; border-radius: 10px; font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 600px) {
+    .options-grid { grid-template-columns: 1fr; }
+    .q-text { font-size: 1.05rem; }
+    .logo { font-size: 2rem; }
+    .ingress-box { padding: 24px 16px; }
+    .pod-select-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- LOBBY -->
+<div id="lobby" class="screen active">
+  <div class="logo"><span class="k">Trivia</span><span class="t">Node</span></div>
+  <div class="tagline">Kubernetes mimarisini oyunla öğren</div>
+  <div class="player-join">
+    <h2>Cluster'a katıl</h2>
+    <div class="input-row">
+      <input type="text" id="player-name" placeholder="Kullanıcı adın" maxlength="16" autocomplete="off" />
+    </div>
+    <div class="role-select">
+      <div class="role-btn selected" data-role="pod" onclick="selectRole(this,'pod')">
+        <span class="role-icon">⬡</span>
+        <span class="role-name">Pod (Oyuncu)</span>
+      </div>
+      <div class="role-btn" data-role="ingress" onclick="selectRole(this,'ingress')">
+        <span class="role-icon">⇄</span>
+        <span class="role-name">Ingress (Kaptan)</span>
+      </div>
+    </div>
+    <button class="btn-join" onclick="joinPlayer()">Cluster'a Bağlan</button>
+  </div>
+  <div class="players-list">
+    <h3>Aktif Cluster</h3>
+    <div id="player-tags"></div>
+    <br>
+    <button class="btn-start" id="btn-start" onclick="startGame()" disabled>Oyunu Başlat ▶</button>
+    <p style="color:#64748b;font-size:0.8rem;margin-top:8px;text-align:center" id="start-hint">En az 2 Pod oyuncusu gerekli</p>
+  </div>
+</div>
+
+<!-- INGRESS — hem kaptan seçim hem de otomatik routing ekranı -->
+<div id="ingress-screen" class="screen">
+  <div class="ingress-box">
+    <div class="ingress-title">⇄ Ingress Controller</div>
+    <div class="ingress-label" id="ing-category">—</div>
+    <div class="ing-diff-row" id="ing-diff-label">Zorluk: —</div>
+
+    <!-- Kaptan seçim paneli (kaptan varken gösterilir) -->
+    <div class="captain-panel" id="captain-panel">
+      <div class="captain-label">Kaptan Kararı Bekleniyor</div>
+      <div class="captain-instruction" id="captain-instruction">Bu soruyu hangi Pod çözsün?</div>
+      <div class="pod-select-grid" id="pod-select-grid"></div>
+      <button class="btn-confirm-route" id="btn-confirm-route" onclick="captainConfirm()">Yönlendir →</button>
+      <div class="captain-hint" id="captain-hint">Kaptan doğru Pod'u seçerse +100 bonus puan alır</div>
+    </div>
+
+    <!-- Routing animasyonu (kaptan seçtikten sonra veya kaptan yokken) -->
+    <div class="routing-panel" id="routing-panel">
+      <div class="routing-anim">
+        <div class="node-box">İstek Geldi</div>
+        <div class="arrow">→</div>
+        <div class="node-box active" id="ing-to">Yönlendiriliyor...</div>
+      </div>
+      <div class="routing-msg">Bu soruyu <span id="routed-player">—</span> çözecek</div>
+      <div class="ing-countdown" id="ing-countdown"></div>
+    </div>
+  </div>
+</div>
+
+<!-- WAITING (kaptan burada bekler, pod soruyu çözerken) -->
+<div id="waiting-screen" class="screen">
+  <div class="waiting-box">
+    <div class="spinner"></div>
+    <div class="waiting-title" id="waiting-title">Pod Çalışıyor...</div>
+    <div class="waiting-sub">Soru <span id="active-pod-name" style="color:#4ade80;">—</span>'a yönlendirildi</div>
+    <div class="cluster-viz" id="cluster-viz"></div>
+    <div class="waiting-captain-note" id="waiting-captain-note" style="display:none">
+      ⇄ Kaptan olarak bu soruyu yönlendirdin.<br>Pod cevaplarsa bonus puan kazanırsın!
+    </div>
+  </div>
+</div>
+
+<!-- QUESTION -->
+<div id="question-screen" class="screen">
+  <div class="q-header">
+    <div class="q-meta">
+      <span class="cat" id="q-cat">—</span>
+      <span class="q-diff diff-medium" id="q-diff">—</span>
+    </div>
+    <div class="timer-ring">
+      <svg width="52" height="52" viewBox="0 0 52 52">
+        <circle cx="26" cy="26" r="22" fill="none" stroke="#2d3548" stroke-width="4"/>
+        <circle cx="26" cy="26" r="22" fill="none" stroke="#60a5fa" stroke-width="4"
+          stroke-dasharray="138.23" stroke-dashoffset="0"
+          id="timer-circle" stroke-linecap="round"/>
+      </svg>
+      <div class="timer-num" id="timer-num">15</div>
+    </div>
+  </div>
+  <div class="q-card">
+    <div class="q-pod-indicator">
+      <div class="pod-icon"></div>
+      <span id="active-player-name">—</span>&nbsp;işliyor...
+    </div>
+    <div class="q-text" id="q-text">Soru yükleniyor...</div>
+  </div>
+  <div class="options-grid" id="options-grid"></div>
+  <div class="status-bar">
+    <span id="q-num">Soru 1 / 5</span>
+    <span class="http-badge http-pending" id="http-badge">● Bekleniyor</span>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="result-screen" class="screen">
+  <div class="result-box">
+    <div class="result-icon" id="result-icon">🏆</div>
+    <div class="result-title" id="result-title">Oyun Bitti!</div>
+    <div class="result-sub" id="result-sub">Kubernetes cluster testi tamamlandı.</div>
+    <div class="score-display">
+      <div class="score-num" id="final-score">0</div>
+      <div class="score-label">Kazananın Puanı</div>
+    </div>
+    <div class="podium" id="podium"></div>
+    <button class="btn-restart" onclick="restartGame()">Yeni Oyun ▶</button>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  { cat:"Kubernetes", diff:"Kolay", text:"Kubernetes'te en küçük dağıtım birimi nedir?", opts:["Node","Pod","Cluster","Namespace"], ans:1 },
+  { cat:"Kubernetes", diff:"Orta",  text:"Ingress Controller'ın temel görevi nedir?", opts:["Veritabanı yönetmek","Dış trafiği servislere yönlendirmek","Pod'ları izlemek","Image çekmek"], ans:1 },
+  { cat:"Docker",     diff:"Kolay", text:"Dockerfile'da uygulamayı başlatan komut hangisidir?", opts:["RUN","FROM","CMD","COPY"], ans:2 },
+  { cat:"Kubernetes", diff:"Zor",   text:"Horizontal Pod Autoscaler hangi metriğe göre ölçekler?", opts:["Disk I/O","CPU / Memory kullanımı","Network paketi","Pod sayısı"], ans:1 },
+  { cat:"DevOps",     diff:"Orta",  text:"CI/CD pipeline'da 'CD' neyin kısaltmasıdır?", opts:["Continuous Docker","Continuous Deployment","Container Delivery","Cloud Design"], ans:1 },
+  { cat:"Kubernetes", diff:"Zor",   text:"etcd Kubernetes'te ne işe yarar?", opts:["Container çalıştırır","Cluster state'ini saklar","Load balancing yapar","Image registry"], ans:1 },
+  { cat:"Docker",     diff:"Orta",  text:"Docker Compose'un ana amacı nedir?", opts:["Tek container yönetimi","Multi-container uygulamaları tanımlamak","Image build etmek","Registry oluşturmak"], ans:1 },
+  { cat:"Kubernetes", diff:"Kolay", text:"kubectl get pods komutu ne gösterir?", opts:["Node listesi","Çalışan pod'lar","Service listesi","ConfigMap listesi"], ans:1 },
+  { cat:"Kubernetes", diff:"Zor",   text:"Bir Pod'un yeniden başlatma politikası seçenekleri hangileridir?", opts:["Always, OnFailure, Never","Always, Sometimes, Never","Start, Stop, Restart","Active, Passive, Dead"], ans:0 },
+  { cat:"Docker",     diff:"Kolay", text:"Docker imajlarını paylaşmak için kullanılan merkezi servis nedir?", opts:["Docker Swarm","Docker Hub","Docker Compose","Docker Engine"], ans:1 },
+];
+
+const CIRCUMF = 138.23;
+const TIMER_MAX = 15;
+const CAPTAIN_BONUS = 100;
+
+let players = [], selectedRole = 'pod';
+let currentQ = 0, activePlayerIdx = 0;
+let timer = null, ingressCdInterval = null;
+let timeLeft = TIMER_MAX, answered = false, questions = [];
+let selectedPodName = null; // Kaptanın seçtiği pod
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function selectRole(el, role) {
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedRole = role;
+}
+
+function joinPlayer() {
+  const inp = document.getElementById('player-name');
+  const name = inp.value.trim();
+  if (!name) { inp.focus(); showToast('Bir isim gir!'); return; }
+  if (players.find(p => p.name === name)) { showToast('Bu isim zaten alındı!'); return; }
+  if (selectedRole === 'ingress' && players.find(p => p.role === 'ingress')) {
+    showToast('Zaten bir Kaptan (Ingress) var!'); return;
+  }
+  players.push({ name, role: selectedRole, score: 0 });
+  inp.value = '';
+  renderTags();
+  updateStartBtn();
+}
+
+function updateStartBtn() {
+  const pods = players.filter(p => p.role === 'pod');
+  const btn = document.getElementById('btn-start');
+  const hint = document.getElementById('start-hint');
+  const ok = pods.length >= 2;
+  btn.disabled = !ok;
+  hint.textContent = ok
+    ? players.length + ' oyuncu hazır — başlayabilirsin!'
+    : 'En az 2 Pod oyuncusu gerekli (şu an: ' + pods.length + ')';
+  hint.style.color = ok ? '#4ade80' : '#64748b';
+}
+
+function renderTags() {
+  document.getElementById('player-tags').innerHTML = players.map(p =>
+    '<span class="player-tag">' +
+      '<span class="dot"></span>' + p.name +
+      '<span class="role-badge">' + (p.role === 'ingress' ? '⇄ Kaptan' : '⬡ Pod') + '</span>' +
+    '</span>'
+  ).join('');
+}
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function startGame() {
+  const pods = players.filter(p => p.role === 'pod');
+  if (pods.length < 2) { showToast('En az 2 Pod oyuncusu gerekli!'); return; }
+  questions = shuffle(QUESTIONS).slice(0, 5);
+  currentQ = 0; activePlayerIdx = 0;
+  players.forEach(p => { p.score = 0; });
+  showIngressScreen();
+}
+
+function getPods() {
+  return players.filter(p => p.role === 'pod');
+}
+
+function getCaptain() {
+  return players.find(p => p.role === 'ingress') || null;
+}
+
+function getAutoActivePod() {
+  const pods = getPods();
+  return pods[activePlayerIdx % pods.length];
+}
+
+/* ---- INGRESS EKRANI ---- */
+function showIngressScreen() {
+  clearInterval(ingressCdInterval);
+  selectedPodName = null;
+  showScreen('ingress-screen');
+
+  const q = questions[currentQ];
+  document.getElementById('ing-category').textContent = q.cat;
+  const dc = q.diff === 'Kolay' ? '#4ade80' : q.diff === 'Orta' ? '#f59e0b' : '#f87171';
+  document.getElementById('ing-diff-label').innerHTML =
+    'Zorluk: <span style="color:' + dc + ';font-weight:600;">' + q.diff + '</span>';
+
+  const captain = getCaptain();
+
+  if (captain) {
+    // Kaptan varsa → seçim panelini göster
+    document.getElementById('captain-panel').classList.add('active');
+    document.getElementById('routing-panel').classList.remove('active');
+    buildPodSelectGrid(captain);
+  } else {
+    // Kaptan yoksa → otomatik routing animasyonu
+    document.getElementById('captain-panel').classList.remove('active');
+    document.getElementById('routing-panel').classList.add('active');
+    runAutoRouting(getAutoActivePod());
+  }
+}
+
+function buildPodSelectGrid(captain) {
+  const pods = getPods();
+  document.getElementById('captain-instruction').innerHTML =
+    '<strong>' + captain.name + '</strong>, bu soruyu hangi Pod çözsün?';
+
+  const grid = document.getElementById('pod-select-grid');
+  grid.innerHTML = pods.map(p =>
+    '<button class="pod-select-btn" id="psbtn-' + p.name + '" onclick="captainSelectPod(\'' + p.name.replace(/'/g,"\\'") + '\')">' +
+      '<span class="pod-name">⬡ ' + p.name + '</span>' +
+      '<span class="pod-score">' + p.score + ' puan</span>' +
+    '</button>'
+  ).join('');
+
+  const confirmBtn = document.getElementById('btn-confirm-route');
+  confirmBtn.classList.remove('ready');
+  confirmBtn.textContent = 'Pod seç →';
+}
+
+function captainSelectPod(name) {
+  selectedPodName = name;
+  document.querySelectorAll('.pod-select-btn').forEach(b => b.classList.remove('chosen'));
+  const btn = document.getElementById('psbtn-' + name);
+  if (btn) btn.classList.add('chosen');
+  const confirmBtn = document.getElementById('btn-confirm-route');
+  confirmBtn.classList.add('ready');
+  confirmBtn.textContent = name + "'e Yönlendir →";
+}
+
+function captainConfirm() {
+  if (!selectedPodName) return;
+  const pod = players.find(p => p.name === selectedPodName);
+  if (!pod) return;
+
+  // Seçim panelini gizle, routing animasyonunu göster
+  document.getElementById('captain-panel').classList.remove('active');
+  document.getElementById('routing-panel').classList.add('active');
+  runAutoRouting(pod);
+}
+
+function runAutoRouting(pod) {
+  const ingTo = document.getElementById('ing-to');
+  ingTo.textContent = 'Yönlendiriliyor...';
+  ingTo.className = 'node-box active';
+  document.getElementById('routed-player').textContent = '...';
+  document.getElementById('ing-countdown').textContent = '3 saniye sonra...';
+
+  let cd = 3;
+  ingressCdInterval = setInterval(() => {
+    cd--;
+    if (cd <= 0) {
+      clearInterval(ingressCdInterval);
+      ingTo.textContent = pod.name + ' ⬡';
+      document.getElementById('routed-player').textContent = pod.name;
+      document.getElementById('ing-countdown').textContent = '';
+      setTimeout(() => showWaitingOrQuestion(pod), 1200);
+    } else {
+      document.getElementById('ing-countdown').textContent = cd + ' saniye sonra...';
+    }
+  }, 1000);
+}
+
+/* ---- WAITING EKRANI ---- */
+function showWaitingOrQuestion(pod) {
+  const captain = getCaptain();
+
+  // Cluster görselini güncelle
+  document.getElementById('active-pod-name').textContent = pod.name;
+  document.getElementById('cluster-viz').innerHTML = players.map(p => {
+    let cls = 'mini-pod';
+    if (p.name === pod.name) cls += ' active-pod';
+    else if (p.role === 'ingress') cls += ' ingress-pod';
+    return '<div class="' + cls + '">' +
+      (p.role === 'ingress' ? '⇄ ' : '⬡ ') + p.name +
+    '</div>';
+  }).join('');
+
+  // Captain note
+  const captainNote = document.getElementById('waiting-captain-note');
+  captainNote.style.display = 'none';
+
+  if (captain) {
+    // Kaptan her zaman waiting screen'de bekler
+    document.getElementById('waiting-title').textContent = 'Pod Çalışıyor...';
+    captainNote.style.display = 'block';
+    showScreen('waiting-screen');
+    // Soru ekranı kendi başına açılır — bu simülasyonda tek cihazda oynandığı için
+    // kaptanın "ayrı cihazda" olduğunu simüle ediyoruz: 2sn sonra soru açılır
+    setTimeout(() => showQuestion(pod), 2000);
+  } else {
+    // Kaptan yok, direkt soru ekranına geç
+    showQuestion(pod);
+  }
+}
+
+/* ---- SORU EKRANI ---- */
+function showQuestion(pod) {
+  showScreen('question-screen');
+  const q = questions[currentQ];
+  answered = false;
+
+  document.getElementById('q-cat').textContent = q.cat;
+  const diffEl = document.getElementById('q-diff');
+  diffEl.textContent = q.diff;
+  diffEl.className = 'q-diff ' + (q.diff === 'Kolay' ? 'diff-easy' : q.diff === 'Orta' ? 'diff-medium' : 'diff-hard');
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('active-player-name').textContent = pod.name;
+  document.getElementById('q-num').textContent = 'Soru ' + (currentQ + 1) + ' / ' + questions.length;
+  document.getElementById('http-badge').textContent = '● Bekleniyor';
+  document.getElementById('http-badge').className = 'http-badge http-pending';
+
+  const letters = ['A','B','C','D'];
+  document.getElementById('options-grid').innerHTML = q.opts.map((opt, i) =>
+    '<button class="opt-btn" id="opt-' + i + '" onclick="selectAnswer(' + i + ',\'' + pod.name.replace(/'/g,"\\'") + '\')">' +
+      '<span class="opt-letter">' + letters[i] + '</span>' + opt +
+    '</button>'
+  ).join('');
+
+  clearInterval(timer);
+  timeLeft = TIMER_MAX;
+  updateTimerUI(timeLeft);
+  timer = setInterval(() => {
+    timeLeft--;
+    updateTimerUI(timeLeft);
+    if (timeLeft <= 0) { clearInterval(timer); if (!answered) timeoutQ(pod.name); }
+  }, 1000);
+}
+
+function updateTimerUI(t) {
+  document.getElementById('timer-num').textContent = t;
+  const offset = (CIRCUMF * (TIMER_MAX - t) / TIMER_MAX).toFixed(2);
+  const circle = document.getElementById('timer-circle');
+  circle.setAttribute('stroke-dashoffset', offset);
+  circle.style.stroke = t > 8 ? '#60a5fa' : t > 4 ? '#f59e0b' : '#f87171';
+}
+
+function lockOptions() {
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.add('locked'));
+}
+
+function selectAnswer(idx, podName) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timer);
+  lockOptions();
+
+  const q = questions[currentQ];
+  const badge = document.getElementById('http-badge');
+  const correct = idx === q.ans;
+
+  if (correct) {
+    document.getElementById('opt-' + idx).classList.add('correct');
+    const pts = timeLeft > 10 ? 300 : timeLeft > 5 ? 200 : 100;
+    const pod = players.find(x => x.name === podName);
+    if (pod) pod.score += pts;
+
+    // Kaptanın seçimi doğruysa bonus
+    const captain = getCaptain();
+    if (captain && selectedPodName === podName) {
+      captain.score += CAPTAIN_BONUS;
+      badge.textContent = '200 OK  ✓  +Kaptan bonusu!';
+    } else {
+      badge.textContent = '200 OK  ✓';
+    }
+    badge.className = 'http-badge http-200';
+  } else {
+    document.getElementById('opt-' + idx).classList.add('wrong');
+    document.getElementById('opt-' + q.ans).classList.add('correct');
+    badge.textContent = '500 Error  ✗';
+    badge.className = 'http-badge http-err';
+  }
+
+  setTimeout(nextQuestion, 2200);
+}
+
+function timeoutQ(podName) {
+  answered = true;
+  lockOptions();
+  const q = questions[currentQ];
+  document.getElementById('opt-' + q.ans).classList.add('correct');
+  const badge = document.getElementById('http-badge');
+  badge.textContent = '408 Timeout  ⏱';
+  badge.className = 'http-badge http-err';
+  setTimeout(nextQuestion, 2200);
+}
+
+function nextQuestion() {
+  activePlayerIdx++;
+  currentQ++;
+  if (currentQ >= questions.length) showResults();
+  else showIngressScreen();
+}
+
+/* ---- SONUÇ ---- */
+function showResults() {
+  clearInterval(timer); clearInterval(ingressCdInterval);
+  showScreen('result-screen');
+  const sorted = [...players].sort((a, b) => b.score - a.score);
+  const winner = sorted[0];
+  document.getElementById('result-icon').textContent = winner.score > 0 ? '🏆' : '💔';
+  document.getElementById('result-title').textContent = winner.score > 0 ? winner.name + ' Kazandı!' : 'Kimse Puan Alamadı';
+  document.getElementById('result-sub').textContent =
+    'Cluster testi tamamlandı. ' + questions.length + ' istek işlendi.';
+  document.getElementById('final-score').textContent = winner.score;
+
+  const heights = [90, 65, 45], colors = ['#f59e0b','#94a3b8','#b45309'], medals = ['🥇','🥈','🥉'];
+  document.getElementById('podium').innerHTML = sorted.slice(0, 3).map((p, i) =>
+    '<div class="podium-item">' +
+      '<div style="font-size:1.2rem;margin-bottom:4px;">' + (medals[i]||'') + '</div>' +
+      '<div class="podium-bar" style="height:' + (heights[i]||35) + 'px;background:' + (colors[i]||'#2d3548') + ';">' +
+        p.score + 'pt' +
+        (p.role === 'ingress' ? '<br><span style="font-size:0.6rem;">⇄</span>' : '') +
+      '</div>' +
+      '<div class="podium-name">' + p.name + '</div>' +
+    '</div>'
+  ).join('');
+}
+
+/* ---- RESTART ---- */
+function restartGame() {
+  clearInterval(timer); clearInterval(ingressCdInterval);
+  players = []; currentQ = 0; activePlayerIdx = 0; answered = false;
+  selectedRole = 'pod'; selectedPodName = null;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector('.role-btn[data-role="pod"]').classList.add('selected');
+  document.getElementById('player-tags').innerHTML = '';
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('start-hint').textContent = 'En az 2 Pod oyuncusu gerekli';
+  document.getElementById('start-hint').style.color = '#64748b';
+  showScreen('lobby');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+document.getElementById('player-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') joinPlayer();
+});
+</script>
+</body>
+</html>
