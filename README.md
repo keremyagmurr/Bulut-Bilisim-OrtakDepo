@@ -18,8 +18,8 @@
 3. [Kubernetes Mimarisi](#-kubernetes-mimarisi)
 4. [Sistem Mimarisi](#-sistem-mimarisi)
 5. [CI/CD Pipeline Akışı](#-cicd-pipeline-akışı)
-6. [Deployment, Service, PV/PVC, NetworkPolicy](#-kubernetes-bileşenleri)
-7. [Rolling Update, Rollback ve Ölçekleme](#-rolling-update-rollback-ve-ölçekleme)
+6. [Deployment, Service, PV/PVC ve NetworkPolicy Kullanımı](#-deployment-service-pvpvc-ve-networkpolicy-kullanımı)
+7. [Rolling update, rollback ve ölçekleme adımları](#-rolling-update-rollback-ve-ölçekleme-adımları)
 8. [Hızlı Başlangıç](#-hızlı-başlangıç)
 9. [Proje Yapısı](#-proje-yapısı)
 10. [Soru Bankası](#-soru-bankası)
@@ -226,7 +226,7 @@ trivia-node/Jenkinsfile
 
 ---
 
-## 📦 Kubernetes Bileşenleri
+## 📦 Deployment, Service, PV/PVC ve NetworkPolicy Kullanımı
 
 ### 1. Deployment (`k8s/deployment.yaml`)
 
@@ -313,7 +313,7 @@ spec:
 
 ---
 
-## 🔄 Rolling Update, Rollback ve Ölçekleme
+## 🔄 Rolling update, rollback ve ölçekleme adımları
 
 ### Rolling Update (Kesintisiz Güncelleme)
 
