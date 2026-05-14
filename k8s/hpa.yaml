@@ -15,7 +15,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: trivia-node
-  minReplicas: 2                   # Minimum 2 Pod (yüksek erişilebilirlik)
+  minReplicas: 1                   # Minimum 2 Pod (yüksek erişilebilirlik)
   maxReplicas: 10                  # Maksimum 10 Pod (maliyet kontrolü)
   metrics:
     - type: Resource
