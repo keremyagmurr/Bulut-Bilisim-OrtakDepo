@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClusterQuiz | Ekip Yarışması</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-light: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #eab308;
+      --border: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding: 20px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 500px;
+      margin-top: 20px;
+    }
+
+    /* Typography */
+    h1 {
+      font-size: 36px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 30px;
+      background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -1px;
+    }
+
+    /* Screens */
+    .screen {
+      display: none;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Inputs & Buttons */
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      color: var(--text);
+      font-size: 16px;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--error);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-xl {
+      padding: 18px 30px;
+      font-size: 18px;
+    }
+
+    /* Chips & Badges */
+    .chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip {
+      background: var(--surface-light);
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .cat-badge {
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .diff-badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .diff-Kolay {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .diff-Orta {
+      background: rgba(234, 179, 8, 0.15);
+      color: var(--warning);
+    }
+
+    .diff-OrtaÜstü {
+      background: rgba(249, 115, 22, 0.15);
+      color: #f97316;
+    }
+
+    .diff-Zor {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--error);
+    }
+
+    /* Teams Grid */
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .team-card {
+      background: var(--bg);
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .active-team {
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+      border-color: var(--primary);
+      transform: scale(1.02);
+    }
+
+    .t-name {
+      font-weight: 800;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .t-score {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .team-member {
+      font-size: 12px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+    }
+
+    .team-member.captain {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    /* Answering/Question UI */
+    .question-text {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 20px 0;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .options-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .opt-btn {
+      background: var(--surface-light);
+      border: 2px solid transparent;
+      padding: 16px;
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .opt-btn:hover:not(:disabled) {
+      background: var(--surface);
+      border-color: var(--primary);
+    }
+
+    .opt-btn.selected {
+      background: var(--primary);
+      color: white;
+    }
+
+    .opt-btn.correct {
+      background: var(--success) !important;
+      color: white !important;
+    }
+
+    .opt-btn.wrong {
+      background: var(--error) !important;
+      color: white !important;
+    }
+
+    .opt-letter {
+      width: 28px;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    /* Timer */
+    .timer-circle {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 4px solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 24px;
+      margin: 0 auto;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+    }
+
+    .timer-circle.warn {
+      border-color: var(--warning);
+      color: var(--warning);
+    }
+
+    .timer-circle.danger {
+      border-color: var(--error);
+      color: var(--error);
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    /* Results */
+    .result-icon {
+      font-size: 48px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .result-title {
+      font-size: 24px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* Progress Bar */
+    .progress-wrap {
+      margin-top: 10px;
+      background: var(--bg);
+      height: 8px;
+      border-radius: 100px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--primary);
+      width: 0%;
+      transition: width 0.5s ease-out;
+    }
+
+    /* Notifications */
+    #notify {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: var(--primary);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 100px;
+      font-weight: 700;
+      z-index: 1000;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    #notify.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Helper utilities */
+    .text-center {
+      text-align: center;
+    }
+
+    .mt-8 {
+      margin-top: 8px;
+    }
+
+    .mt-12 {
+      margin-top: 12px;
+    }
+
+    .mt-16 {
+      margin-top: 16px;
+    }
+
+    .mb-12 {
+      margin-bottom: 12px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 13px;
+    }
+
+    .gap-10 {
+      gap: 10px;
+    }
+
+    /* Special Game Modes UI */
+    .tf-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .tf-btn {
+      padding: 30px 10px;
+      border-radius: 16px;
+      font-size: 18px;
+      font-weight: 800;
+      text-align: center;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tf-true {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+    }
+
+    .tf-true:hover {
+      background: rgba(34, 197, 94, 0.25);
+      border-color: var(--success);
+    }
+
+    .tf-false {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--error);
+    }
+
+    .tf-false:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: var(--error);
+    }
+
+    /* Chess Board Visualization */
+    .chess-container {
+      margin: 20px auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .chess-board-wrapper {
+      padding: 15px;
+      background: #2c3e50;
+      border-radius: 12px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .chess-board-with-coords {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chess-rank-labels {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      padding-right: 8px;
+    }
+
+    .chess-rank-label {
+      height: 36px;
+      display: flex;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #95a5a6;
+    }
+
+    .chess-board-with-coords {
+      display: grid;
+      grid-template-columns: 20px 1fr;
+      grid-template-rows: 1fr 20px;
+    }
+
+    .chess-board {
+      display: grid;
+      grid-template-columns: repeat(8, 36px);
+      grid-template-rows: repeat(8, 36px);
+      border: 2px solid #1a1a1a;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .chess-cell {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      user-select: none;
+    }
+
+    .chess-cell.light {
+      background-color: #ecf0f1;
+    }
+
+    .chess-cell.dark {
+      background-color: #95a5a6;
+    }
+
+    .chess-file-labels {
+      grid-column: 2;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      text-align: center;
+      padding-top: 4px;
+    }
+
+    .chess-file-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #95a5a6;
+    }
+
+    .chess-piece {
+      cursor: default;
+      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+    }
+
+    .chess-piece.white-piece {
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 -1px 1px rgba(0, 0, 0, 0.4), 1px 0 2px rgba(0, 0, 0, 0.6), -1px 0 2px rgba(0, 0, 0, 0.6);
+    }
+
+    .chess-piece.black-piece {
+      color: #111;
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8), 0 -1px 1px rgba(255, 255, 255, 0.4), 1px 0 1px rgba(255, 255, 255, 0.6), -1px 0 1px rgba(255, 255, 255, 0.6);
+    }
+
+    .chess-fen {
+      margin-top: 10px;
+      font-size: 10px;
+      color: #7f8c8d;
+      font-family: monospace;
+      word-break: break-all;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 6px;
+      border-radius: 4px;
+      max-width: 300px;
+    }
+
+    .options-list.chess-options {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .options-list.chess-options .opt-btn {
+      padding: 12px 10px;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 6px;
+    }
+
+    .options-list.chess-options .opt-letter {
+      margin-bottom: 2px;
+    }
+
+    .chess-move {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .chess-hint {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    /* Spot the Difference UI */
+    .spotdiff-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .spotdiff-panel {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .panel-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .emoji-grid {
+      display: grid;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .emoji-cell {
+      width: 40px;
+      height: 40px;
+      background: var(--bg);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .answered-check {
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .self-tag {
+      font-size: 9px;
+      background: var(--primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
+    }
+
+    /* Pick Buttons */
+    .pick-btn {
+      background: var(--surface-light);
+      border: 2px solid transparent;
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 10px;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .pick-btn:hover {
+      background: var(--surface);
+      border-color: var(--primary);
+    }
+
+    .pick-btn .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="notify">Bildirim mesajı</div>
+
+  <div class="app-container">
+    <h1>ClusterQuiz</h1>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: JOIN / CREATE                         -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-join" class="screen active">
+      <div class="card">
+        <div class="card-title">Yeni Oyun Kur</div>
+        <div class="input-group">
+          <label>Host Adınız</label>
+          <input type="text" id="hostNameInput" placeholder="Örn: Hakan">
+        </div>
+        <div class="input-group">
+          <label>Soru Sayısı</label>
+          <input type="number" id="hostQuestionCount" value="10" min="1" max="50">
+        </div>
+        <button class="btn btn-primary btn-full btn-lg" onclick="createGame()">
+          Oda Kur & Başlat 🏠
+        </button>
+      </div>
+
+      <div class="text-center muted mb-12">— VEYA —</div>
+
+      <div class="card">
+        <div class="card-title">Oyuna Katıl</div>
+        <div class="input-group">
+          <label>Oda Kodu</label>
+          <input type="text" id="roomCodeInput" placeholder="4 Haneli Kod" maxlength="4">
+        </div>
+        <div class="input-group">
+          <label>Adınız</label>
+          <input type="text" id="playerNameInput" placeholder="Örn: Ayşe">
+        </div>
+        <button class="btn btn-outline btn-full" onclick="joinGame()">
+          Odaya Gir ✨
+        </button>
+      </div>
+
+      <div class="text-center mt-16 small muted">
+        Şu an aktif <span id="joinCount">0</span> oyuncu var.
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: LOBBY                                 -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-lobby" class="screen">
+      <div class="card text-center" id="lobbyCodeDisplay" style="display:none;">
+        <div class="muted small mb-8">ARKADAŞLARINI DAVET ET</div>
+        <div id="lobbyRoomCode" style="font-size:42px; font-weight:900; letter-spacing:4px; color:var(--primary);">0000
+        </div>
+        <div style="margin:15px auto; width:150px; height:150px; background:white; padding:10px; border-radius:12px;">
+          <img id="lobbyQrCode" src="" style="width:100%; height:100%;">
+        </div>
+        <div class="muted small">QR kodu tarat veya kodu paylaş</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🎮 Oyuncular (<span id="lobbyCount">0</span>)</div>
+        <div class="chip-list" id="lobbyPlayerList"></div>
+      </div>
+
+      <div id="lobbyHostBadge"
+        style="display:none; text-align:center; padding:12px; background:rgba(99,102,241,0.1); border-radius:12px; border:1px solid var(--border); margin-bottom:20px;">
+        <div class="muted small">ODA KURUCUSU</div>
+        <div style="font-weight:800; font-size:18px;" id="lobbyHostName">—</div>
+      </div>
+
+      <!-- Host: Start button -->
+      <div id="hostStartWrap" style="display:none;">
+        <button class="btn btn-success btn-full btn-xl" onclick="startGame()">
+          🚀 Oyunu Başlat
+        </button>
+        <div class="muted small text-center mt-8">En az 2 oyuncu gerekli (host hariç)</div>
+      </div>
+
+      <!-- Host: Soru Ekle Butonu (Her zaman host için görünür) -->
+      <div id="hostAddQWrap" style="display:none;" class="mt-12">
+        <button class="btn btn-full"
+          style="background:var(--surface);border:1px dashed var(--border);color:var(--muted);font-weight:600;"
+          onclick="showScreen('addquestion')">
+          📝 Özel Soru Ekle
+        </button>
+      </div>
+
+      <div id="hostTransferWrap"
+        style="display:none; margin-top:12px;padding:12px;background:var(--surface);border-radius:10px;border:1px solid var(--border);">
+        <div class="muted small mb-12" style="font-weight:600;">🔄 Kurucuyu Devret</div>
+        <div style="display:flex;gap:8px;">
+          <select id="transferHostSelect"
+            style="flex:1;padding:8px;border-radius:6px;background:var(--bg);color:var(--text);border:1px solid var(--border);outline:none;font-size:13px;">
+            <option value="">Oyuncu seç...</option>
+          </select>
+          <button class="btn btn-primary" onclick="transferHost()" style="white-space:nowrap;">Devret</button>
+        </div>
+      </div>
+
+      <div id="playerWaitLobby" style="display:none;" class="card text-center">
+        <div class="spinner"></div>
+        <div class="muted small">Host'un oyunu başlatması bekleniyor...</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: ADD QUESTION (Host Only)              -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-addquestion" class="screen">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <button class="btn btn-outline" style="padding:10px 15px;" onclick="showScreen('lobby')">← Geri</button>
+        <h2 style="font-size:20px;font-weight:800;">Soru Yönetimi</h2>
+      </div>
+
+      <!-- Mode Selector -->
+      <div class="card" style="padding:15px;">
+        <div class="card-title" style="font-size:14px;margin-bottom:10px;">Yeni Soru Ekle</div>
+
+        <div id="editModeBar"
+          style="display:none; background:rgba(99,102,241,0.15); padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid var(--primary);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px; font-weight:700; color:var(--primary);">✏️ Soru Düzenleniyor (ID: <span
+                id="editModeIndex">0</span>)</span>
+            <button onclick="cancelEdit()"
+              style="background:none; border:none; color:var(--error); font-weight:bold; cursor:pointer; font-size:12px;">İPTAL</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;">
+          <button id="aqTypeMulti" class="btn btn-primary" style="font-size:12px;padding:6px 12px;"
+            onclick="setAqType('multi')">📋 4 Şık</button>
+          <button id="aqTypeTf" class="btn"
+            style="font-size:12px;padding:6px 12px;background:var(--surface);color:var(--text);"
+            onclick="setAqType('truefalse')">✅ D/Y</button>
+          <button id="aqTypeChess" class="btn"
+            style="font-size:12px;padding:6px 12px;background:var(--surface);color:var(--text);"
+            onclick="setAqType('chess')">♟️ Satranç</button>
+          <button id="aqTypeSpot" class="btn"
+            style="font-size:12px;padding:6px 12px;background:var(--surface);color:var(--text);"
+            onclick="setAqType('spotdiff')">🔍 Fark Bul</button>
+        </div>
+
+        <div class="input-group" style="margin-bottom:12px;">
+          <input type="text" id="aqCategory" placeholder="Kategori (ör: Coğrafya, Yazılım...)" style="font-size:13px;">
+        </div>
+
+        <div style="display:flex;gap:10px;margin-bottom:12px;">
+          <div style="flex:2;">
+            <select id="aqDifficulty"
+              style="width:100%;padding:10px;border-radius:8px;background:var(--surface);color:var(--text);border:2px solid var(--border);font-size:13px;outline:none;">
+              <option value="Kolay">Kolay (15s)</option>
+              <option value="Orta" selected>Orta (25s)</option>
+              <option value="Orta Üstü">Orta Üstü (35s)</option>
+              <option value="Zor">Zor (45s)</option>
+            </select>
+          </div>
+          <div style="flex:1;">
+            <select id="aqAnswer"
+              style="width:100%;padding:10px;border-radius:8px;background:var(--surface);color:var(--text);border:2px solid var(--border);font-size:13px;outline:none;">
+              <option value="0">Cevap: A</option>
+              <option value="1">Cevap: B</option>
+              <option value="2">Cevap: C</option>
+              <option value="3">Cevap: D</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-group" style="margin-bottom:12px;">
+          <textarea id="aqQuestion" placeholder="Soru metni..."
+            style="width:100%;min-height:80px;padding:12px;border-radius:8px;background:var(--surface);color:var(--text);border:2px solid var(--border);font-size:14px;resize:vertical;outline:none;"></textarea>
+        </div>
+
+        <div id="aqDynamic"></div>
+
+        <button class="btn btn-success btn-full" onclick="submitNewQuestion()" style="margin-top:10px;">💾 Soruyu
+          Ekle</button>
+        <div id="aqFeedback" style="display:none;margin-top:10px;"></div>
+      </div>
+
+      <!-- JSON Upload -->
+      <div class="card" style="padding:15px;">
+        <div class="card-title" style="font-size:14px;margin-bottom:10px;">📦 Soru Dosyası Yükle (JSON)</div>
+        <div style="display:flex;gap:8px;">
+          <input type="file" id="questionFileInput" accept=".json" style="font-size:12px;flex:1;">
+          <button class="btn btn-outline" style="padding:6px 12px;font-size:12px;"
+            onclick="uploadQuestionFile()">Yükle</button>
+        </div>
+        <div id="uploadFeedback" style="display:none;margin-top:8px;"></div>
+      </div>
+
+      <!-- Questions List -->
+      <div class="card" style="padding:15px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div class="card-title" style="font-size:14px;margin-bottom:0;">📋 Soru Havuzu</div>
+          <button class="btn btn-outline" style="padding:4px 10px;font-size:11px;"
+            onclick="loadQuestionsList()">🔄 Yükle/Yenile</button>
+        </div>
+
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          <input type="text" id="qListSearch" placeholder="Ara..." style="flex:1;font-size:12px;padding:8px 12px;"
+            oninput="filterQuestionsList()">
+          <select id="qListFilter" style="font-size:12px;padding:8px;border-radius:8px;background:var(--surface);"
+            onchange="filterQuestionsList()">
+            <option value="">Hepsi</option>
+            <option value="multi">4 Şık</option>
+            <option value="truefalse">D/Y</option>
+            <option value="chess">Satranç</option>
+            <option value="spotdiff">Fark Bul</option>
+          </select>
+        </div>
+
+        <div id="qListCount" class="muted small mb-8">0 soru</div>
+        <div id="qListSelectedCount" class="small mb-12"
+          style="display:none; background:rgba(99,102,241,0.1); padding:8px; border-radius:6px; color:var(--primary); font-weight:700;">
+          📌 0 soru seçildi
+        </div>
+
+        <div id="qListContainer"
+          style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:4px;">
+          <div class="muted small text-center" style="padding:20px;">Soru listesini görmek için "🔄 Yükle" butonuna basın.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: TEAMS FORMATION                       -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-teams" class="screen">
+      <div class="card">
+        <div class="card-title">Takımlar Oluşturuldu</div>
+        <div style="font-size:15px; margin-bottom:20px;" id="teamsInfo">...</div>
+        <div class="teams-grid" id="teamsGridView"></div>
+      </div>
+
+      <div id="hostBeginWrap" style="display:none;" class="mt-12">
+        <div class="card" style="padding:15px; margin-bottom:15px;">
+          <div class="card-title" style="font-size:13px; margin-bottom:10px;">Takım İşlemleri (Sürükle-Bırak Aktif)</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn btn-outline" style="font-size:12px; padding:8px 12px; flex:1;"
+              onclick="reformTeams('solo')">Solo Mod</button>
+            <button class="btn btn-outline" style="font-size:12px; padding:8px 12px; flex:1;" id="btnPairsMode"
+              onclick="reformTeams('pairs')">İkili Takım</button>
+            <button class="btn btn-outline" style="font-size:12px; padding:8px 12px; flex:1;" id="btnTrioMode"
+              onclick="reformTeams('trio')">Üçlü Takım</button>
+          </div>
+
+          <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+            <div style="display:flex; gap:6px; margin-bottom:8px;">
+              <select id="manualPlayerSelect"
+                style="flex:1;padding:8px;border-radius:6px;background:var(--bg);color:var(--text);border:1px solid var(--border);font-size:12px;">
+                <option value="">Oyuncu Seç...</option>
+              </select>
+              <select id="manualTeamSelect"
+                style="flex:1;padding:8px;border-radius:6px;background:var(--bg);color:var(--text);border:1px solid var(--border);font-size:12px;">
+                <option value="">Hedef Takım Seç...</option>
+              </select>
+              <button class="btn btn-primary" onclick="manualMovePlayer()"
+                style="padding:8px 12px; font-size:12px;">Taşı</button>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-outline" style="font-size:12px; padding:8px 12px; flex:1;"
+                onclick="createEmptyTeam()">➕ Boş Takım</button>
+              <button class="btn btn-danger" style="font-size:12px; padding:8px 12px; flex:1;"
+                onclick="backToLobby()">🔙 Lobiye Dön</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-success btn-full btn-xl" onclick="sendQuestion()">
+          🎮 Yarışmayı Başlat!
+        </button>
+        <div class="muted small text-center mt-8">Başlatınca kaptanlara seçim hakkı gider.</div>
+      </div>
+
+      <div id="playerWaitTeams" style="display:none;" class="card text-center">
+        <div class="spinner"></div>
+        <div class="muted small">Host'un yarışmayı başlatması bekleniyor...</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: HOST DASHBOARD (during gameplay)       -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-host" class="screen">
+      <div class="card" style="padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+          <div id="hostStatusText" style="font-weight:800;font-size:18px;">Yarışma Devam Ediyor...</div>
+          <div class="timer-circle" id="hostTimer" style="width:48px;height:48px;font-size:18px;margin:0;">0</div>
+        </div>
+
+        <div id="hostQuestionInfo"
+          style="display:none; background:var(--surface-light); padding:12px; border-radius:12px; margin-bottom:15px; border:1px solid var(--border);">
+          <div style="display:flex;gap:6px;margin-bottom:6px;">
+            <span id="hostCatBadge" class="cat-badge">—</span>
+            <span id="hostDiffBadge" class="diff-badge">—</span>
+          </div>
+          <div id="hostAnsweringName" style="font-weight:600;font-size:14px;color:var(--primary);">🎯 Bekleniyor...</div>
+        </div>
+
+        <div style="margin-bottom:10px; display:flex; justify-content:space-between; font-size:13px; font-weight:700;">
+          <div class="muted"><span id="hostProgressLabel">takım cevapladı</span></div>
+          <div><span id="hostProgress">0</span>/<span id="hostTotal">0</span></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar" id="hostProgressBar"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Takım Durumları</div>
+        <div class="teams-grid" id="hostTeamsGrid"></div>
+      </div>
+
+      <button class="btn btn-primary btn-full btn-lg" id="hostSendBtn" style="display:none;" onclick="sendQuestion()">
+        Sıradaki Soruyu Gönder ➡️
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: CAPTAIN PICK PLAYER                   -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-captain" class="screen">
+      <div class="card">
+        <div style="text-align:center;margin-bottom:15px;">
+          <div style="font-size:32px;margin-bottom:10px;">👑</div>
+          <div style="font-weight:800;font-size:22px;">Sen Kaptansın!</div>
+          <div class="muted small mt-8">Bu soruyu çözmesi için takımından birini seç:</div>
+        </div>
+
+        <div
+          style="display:flex;align-items:center;justify-content:center;gap:10px;background:var(--surface-light);padding:10px;border-radius:12px;margin-bottom:20px;">
+          <span id="captCatBadge" class="cat-badge">—</span>
+          <span id="captDiffBadge" class="diff-badge">—</span>
+          <div
+            style="width:36px;height:36px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;border:2px solid var(--primary);font-size:14px;"
+            id="captTimerInfo">0</div>
+        </div>
+
+        <div id="captainPickList"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: QUESTION (for player)                 -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-question" class="screen">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+          <div style="display:flex;gap:6px;">
+            <span id="qCatBadge" class="cat-badge">—</span>
+            <span id="qDiffBadge" class="diff-badge">—</span>
+          </div>
+          <div class="timer-circle" id="qTimer" style="width:48px;height:48px;font-size:18px;margin:0;">0</div>
+        </div>
+
+        <div id="qModeBanner"></div>
+
+        <div class="question-text" id="questionText">Soru yükleniyor...</div>
+
+        <div id="optionsGrid" class="options-list"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: WAITING (for other players)           -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-waiting" class="screen">
+      <div class="card text-center" style="padding:30px 20px;">
+        <div class="spinner"></div>
+        <div style="font-size:18px;font-weight:800;margin-bottom:6px;">
+          <span id="waitPlayerName">—</span> cevaplıyor...
+        </div>
+        <div class="muted small mb-12" id="waitInfo">Kaptan soruyu ona yönlendirdi.</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+          <span id="waitCatBadge" class="cat-badge">—</span>
+          <span id="waitDiffBadge" class="diff-badge">—</span>
+        </div>
+        <div class="timer-circle mt-16" id="waitTimer"
+          style="width:56px;height:56px;font-size:20px;margin:16px auto 0;">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Puan Durumu</div>
+        <div class="teams-grid" id="waitTeamsGrid"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: WAITING FOR CAPTAIN                   -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-waitcaptain" class="screen">
+      <div class="card text-center" style="padding:30px 20px;">
+        <div class="spinner"></div>
+        <div style="font-size:17px;font-weight:800;margin-bottom:6px;">
+          Kaptan <span id="wcCaptainName">—</span> seçim yapıyor...
+        </div>
+        <div class="muted small mb-12">Soruyu kime yönlendireceğine karar veriyor.</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+          <span id="wcCatBadge" class="cat-badge">—</span>
+          <span id="wcDiffBadge" class="diff-badge">—</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Puan Durumu</div>
+        <div class="teams-grid" id="wcTeamsGrid"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: RESULT                                -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-result" class="screen">
+      <div class="card">
+        <div class="result-icon" id="resIcon">🎉</div>
+        <div class="result-title" id="resTitle" style="font-size: 26px;">Tur Sonu</div>
+
+        <!-- Sadece oyuncuysa kendi sonucunu öne çıkar -->
+        <div id="resMyTeamBox"
+          style="display:none; align-items:center; justify-content:center; gap:8px; margin-bottom:12px;">
+          <div id="resMyIcon">✅</div>
+          <div id="resMyPoints" style="font-weight:bold;">+10</div>
+        </div>
+
+        <div style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:16px;">
+          <div class="muted small mb-12">Doğru cevap:</div>
+          <div style="font-weight:700;color:var(--success);" id="resCorrectText">—</div>
+          <div id="resChessBoard" class="mt-12"></div>
+        </div>
+
+        <div class="card-title text-left">📊 Tur Performansı</div>
+        <div class="teams-grid" id="resRoundGrid" style="margin-bottom: 24px; gap:8px;"></div>
+
+        <div class="card-title text-left">🏆 Güncel Skorlar</div>
+        <div id="resScoreList"></div>
+      </div>
+
+      <!-- Host: next/end buttons -->
+      <div id="resHostBtns" style="display:none;" class="mt-12 gap-10">
+        <button class="btn btn-primary btn-full btn-lg" id="btnNextQuestion" onclick="sendQuestion()">Sonraki Soru
+          ➡️</button>
+        <button class="btn btn-danger btn-full" onclick="endGame()">🏁 Oyunu Bitir</button>
+      </div>
+      <div id="resPlayerWait" style="display:none;" class="mt-12">
+        <div class="card text-center" style="padding:16px;">
+          <div class="muted small">Kurucunun sonraki soruyu göndermesi bekleniyor...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: SCOREBOARD (game over)                -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-scoreboard" class="screen">
+      <div class="card">
+        <div class="text-center" style="padding:20px 0;">
+          <div style="font-size:52px;margin-bottom:10px;">🏆</div>
+          <div style="font-size:26px;font-weight:900;margin-bottom:4px;">Oyun Bitti!</div>
+          <div class="muted small">Final sonuçları</div>
+        </div>
+        <div id="finalScoreList"></div>
+      </div>
+      <div id="sbHostBtns" style="display:none;" class="mt-12">
+        <button class="btn btn-primary btn-full btn-lg" onclick="restartGame()">🔄 Yeni Oyun</button>
+      </div>
+    </div>
+
+  </div><!-- /app -->
+
+  <script>
+    const socket = io();
+    let myName = null;
+    let mySocketId = null;
+    let isHost = false;
+    let currentScreen = 'join';
+    let lastState = {};
+
+    const TEAM_COLORS = ['#6366f1', '#f43f5e', '#22c55e', '#eab308', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#64748b'];
+
+    // ─── CHESS PIECES ───
+    const PIECE_MAP = {
+      'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟',
+      'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙'
+    };
+
+    function renderChessBoard(fen) {
+      const fenParts = fen.split(' ');
+      const isBlackToMove = fenParts.length > 1 && fenParts[1] === 'b';
+      const rows = fenParts[0].split('/');
+
+      let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+      let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+      const grid = [];
+      rows.forEach(rowStr => {
+        const rowArr = [];
+        for (const ch of rowStr) {
+          if (ch >= '1' && ch <= '8') {
+            for (let e = 0; e < parseInt(ch); e++) rowArr.push('');
+          } else {
+            rowArr.push(ch);
+          }
+        }
+        grid.push(rowArr);
+      });
+
+      if (isBlackToMove) {
+        ranks.reverse();
+        files.reverse();
+        grid.reverse();
+        grid.forEach(r => r.reverse());
+      }
+
+      let boardHtml = `
+        <div class="chess-container">
+          <div style="text-align:center;margin-bottom:12px;">
+            <span style="font-weight:900;letter-spacing:1px;font-size:14px;padding:6px 16px;border-radius:20px;background:${isBlackToMove ? '#111' : '#fff'};color:${isBlackToMove ? '#fff' : '#111'};border:2px solid ${isBlackToMove ? '#333' : '#ddd'};box-shadow:0 4px 10px rgba(0,0,0,0.2);">
+              ${isBlackToMove ? '⚫ SIRA SİYAHTA' : '⚪ SIRA BEYAZDA'}
+            </span>
+          </div>
+          <div class="chess-board-wrapper">
+            <div class="chess-board-with-coords">
+              <div class="chess-rank-labels">
+                ${ranks.map(r => `<div class="chess-rank-label">${r}</div>`).join('')}
+              </div>
+              <div class="chess-board">
+      `;
+
+      grid.forEach((row, ri) => {
+        row.forEach((ch, ci) => {
+          const cls = (ri + ci) % 2 === 0 ? 'light' : 'dark';
+          let pieceHtml = '';
+          if (ch) {
+            const isWhite = ch === ch.toUpperCase();
+            pieceHtml = `<span class="chess-piece ${isWhite ? 'white-piece' : 'black-piece'}">${PIECE_MAP[ch] || ch}</span>`;
+          }
+          boardHtml += `<div class="chess-cell ${cls}">${pieceHtml}</div>`;
+        });
+      });
+
+      boardHtml += `
+              </div>
+              <div class="chess-file-labels">
+                ${files.map(f => `<div class="chess-file-label">${f}</div>`).join('')}
+              </div>
+            </div>
+            <div class="chess-fen"><b>FEN:</b> ${fen}</div>
+          </div>
+        </div>
+      `;
+      return boardHtml;
+    }
+
+    // ─── SCREEN MANAGEMENT ──────────────────────────────────────────────
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const el = document.getElementById('screen-' + id);
+      if (el) { el.classList.add('active'); currentScreen = id; }
+    }
+
+    // ─── NOTIFICATION ────────────────────────────────────────────────────
+    function notify(msg, dur = 2500) {
+      const n = document.getElementById('notify');
+      n.textContent = msg;
+      n.classList.add('show');
+      setTimeout(() => n.classList.remove('show'), dur);
+    }
+
+    // ─── ACTIONS ─────────────────────────────────────────────────────────
+    function createGame() {
+      const name = document.getElementById('hostNameInput').value.trim();
+      const rawQc = document.getElementById('hostQuestionCount');
+      const qc = rawQc ? parseInt(rawQc.value) || 10 : 10;
+      if (!name) { notify('❗ Lütfen adınızı girin!'); return; }
+      socket.emit('createGame', { name, questionCount: qc });
+    }
+    function joinGame() {
+      const code = document.getElementById('roomCodeInput').value.trim();
+      const name = document.getElementById('playerNameInput').value.trim();
+      if (!code || code.length !== 4) { notify('❗ 4 haneli oda kodunu girin!'); return; }
+      if (!name) { notify('❗ Lütfen adınızı girin!'); return; }
+      socket.emit('joinGame', { name, roomCode: code });
+    }
+    function startGame() { socket.emit('startGame'); }
+    function sendQuestion() { socket.emit('sendQuestion'); }
+    function endGame() { socket.emit('endGame'); }
+    function restartGame() { socket.emit('restartGame'); }
+    function transferHost() {
+      const sel = document.getElementById('transferHostSelect');
+      if (!sel || !sel.value) { notify('❗ Devredilecek oyuncuyu seçin!'); return; }
+      socket.emit('transferHost', { targetId: sel.value });
+    }
+
+    // ─── SORU EKLEME SİSTEMİ ─────────────────────────────────────────────
+    let currentAqType = 'multi';
+    let addedCount = 0;
+
+    function setAqType(type) {
+      currentAqType = type;
+      ['Multi', 'Tf', 'Chess', 'Spot'].forEach(id => {
+        const btn = document.getElementById('aqType' + id);
+        if (btn) { btn.className = 'btn'; btn.style.cssText = 'font-size:12px;padding:6px 12px;background:var(--surface);color:var(--text);'; }
+      });
+      const activeMap = { multi: 'Multi', truefalse: 'Tf', chess: 'Chess', spotdiff: 'Spot' };
+      const activeBtn = document.getElementById('aqType' + activeMap[type]);
+      if (activeBtn) { activeBtn.className = 'btn btn-primary'; activeBtn.style.cssText = 'font-size:12px;padding:6px 12px;'; }
+
+      const aqAnswer = document.getElementById('aqAnswer');
+      if (type === 'truefalse') {
+        aqAnswer.innerHTML = '<option value="0">0 (Doğru)</option><option value="1">1 (Yanlış)</option>';
+      } else {
+        aqAnswer.innerHTML = '<option value="0">0 (A)</option><option value="1">1 (B)</option><option value="2">2 (C)</option><option value="3">3 (D)</option>';
+      }
+
+      const dyn = document.getElementById('aqDynamic');
+      const inputStyle = 'width:100%;padding:10px;border-radius:8px;background:var(--surface);color:var(--text);border:2px solid var(--border);font-size:13px;margin-bottom:6px;';
+
+      if (type === 'multi' || type === 'chess') {
+        dyn.innerHTML = `
+      <div class="muted small mb-12" style="font-weight:600;">Şıklar (4 adet):</div>
+      <input type="text" id="aqOpt0" placeholder="Şık A" style="${inputStyle}">
+      <input type="text" id="aqOpt1" placeholder="Şık B" style="${inputStyle}">
+      <input type="text" id="aqOpt2" placeholder="Şık C" style="${inputStyle}">
+      <input type="text" id="aqOpt3" placeholder="Şık D" style="${inputStyle}">
+      ${type === 'chess' ? `<div class="muted small mb-12 mt-8" style="font-weight:600;">♟️ FEN Notasyonu:</div>
+      <input type="text" id="aqFen" placeholder="ör: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR" style="${inputStyle}">` : ''}
+    `;
+      } else if (type === 'truefalse') {
+        dyn.innerHTML = `<div class="muted small mb-12" style="font-weight:600;">Şıklar otomatik: Doğru / Yanlış</div>`;
+      } else if (type === 'spotdiff') {
+        dyn.innerHTML = `
+      <div class="muted small mb-12" style="font-weight:600;">Şıklar (4 adet):</div>
+      <input type="text" id="aqOpt0" placeholder="Şık A" style="${inputStyle}">
+      <input type="text" id="aqOpt1" placeholder="Şık B" style="${inputStyle}">
+      <input type="text" id="aqOpt2" placeholder="Şık C" style="${inputStyle}">
+      <input type="text" id="aqOpt3" placeholder="Şık D" style="${inputStyle}">
+      <div class="muted small mb-12 mt-8" style="font-weight:600;">🔍 Emoji Gridleri:</div>
+      <input type="text" id="aqGrid1" placeholder="Orijinal" style="${inputStyle}">
+      <input type="text" id="aqGrid2" placeholder="Değişmiş" style="${inputStyle}">
+    `;
+      }
+    }
+
+    function submitNewQuestion() {
+      const category = document.getElementById('aqCategory')?.value?.trim();
+      const difficulty = document.getElementById('aqDifficulty')?.value;
+      const question = document.getElementById('aqQuestion')?.value?.trim();
+      const answer = parseInt(document.getElementById('aqAnswer')?.value || '0');
+
+      if (!category || !question) { notify('❗ Kategori ve soru metnini girin!'); return; }
+
+      let options = [];
+      if (currentAqType === 'truefalse') {
+        options = ['Doğru', 'Yanlış'];
+      } else {
+        for (let i = 0; i < 4; i++) {
+          const v = document.getElementById('aqOpt' + i)?.value?.trim();
+          if (!v) { notify(`❗ Şık ${String.fromCharCode(65 + i)} boş olamaz!`); return; }
+          options.push(v);
+        }
+      }
+
+      const data = { category, difficulty, question, options, answer, type: currentAqType };
+
+      if (currentAqType === 'chess') {
+        const fen = document.getElementById('aqFen')?.value?.trim();
+        if (!fen) { notify('❗ FEN notasyonu girin!'); return; }
+        data.fen = fen;
+      }
+
+      if (currentAqType === 'spotdiff') {
+        const g1 = document.getElementById('aqGrid1')?.value?.trim();
+        const g2 = document.getElementById('aqGrid2')?.value?.trim();
+        if (!g1 || !g2) { notify('❗ Her iki emoji gridini girin!'); return; }
+        data.grid1 = g1.split(',').map(s => s.trim());
+        data.grid2 = g2.split(',').map(s => s.trim());
+      }
+
+      socket.emit('addQuestion', data);
+    }
+
+    socket.on('questionAdded', ({ total, question }) => {
+      addedCount++;
+      notify(`✅ Soru eklendi! (Toplam: ${total})`, 3000);
+      const fb = document.getElementById('aqFeedback');
+      fb.style.display = 'block';
+      fb.innerHTML = `<div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:10px;color:var(--success);font-size:13px;">✅ ${addedCount} soru eklendi!</div>`;
+    });
+
+    // ─── SORU HAVUZU GÖRÜNTÜLEME + SİLME ────────────────────────────────
+    let cachedQuestions = [];
+    let selectedQuestionIndices = [];
+
+    function loadQuestionsList() {
+      socket.emit('getQuestions');
+      notify('📋 Soru havuzu yükleniyor...');
+    }
+
+    socket.on('questionsList', (list) => {
+      cachedQuestions = list;
+      renderQuestionsList(list);
+    });
+
+    socket.on('questionDeleted', ({ total }) => {
+      notify(`🗑️ Soru silindi! Kalan: ${total}`, 3000);
+    });
+
+    function filterQuestionsList() {
+      const search = (document.getElementById('qListSearch')?.value || '').toLowerCase();
+      const typeFilter = document.getElementById('qListFilter')?.value || '';
+
+      let filtered = cachedQuestions;
+      if (search) filtered = filtered.filter(q => q.question.toLowerCase().includes(search) || q.category.toLowerCase().includes(search));
+      if (typeFilter) filtered = filtered.filter(q => q.type === typeFilter);
+      renderQuestionsList(filtered);
+    }
+
+    function renderQuestionsList(list) {
+      const container = document.getElementById('qListContainer');
+      const countEl = document.getElementById('qListCount');
+      if (!container) return;
+
+      countEl.textContent = `${list.length} soru gösteriliyor (toplam: ${cachedQuestions.length})`;
+
+      const selCount = document.getElementById('qListSelectedCount');
+      if (selectedQuestionIndices.length > 0) {
+        selCount.style.display = 'block';
+        selCount.textContent = `📌 ${selectedQuestionIndices.length} özel soru seçildi (Oyun oluşturduğunuz soru sayısını yoksayar)`;
+      } else {
+        selCount.style.display = 'none';
+      }
+
+      if (list.length === 0) {
+        container.innerHTML = '<div class="muted small text-center" style="padding:20px;">Soru bulunamadı. "🔄 Yükle" butonuna basın.</div>';
+        return;
+      }
+
+      const typeIcons = { multi: '📋', truefalse: '✅', chess: '♟️', spotdiff: '🔍' };
+      const diffColors = { Kolay: '#22c55e', Orta: '#f59e0b', 'Orta Üstü': '#f97316', Zor: '#ef4444' };
+
+      container.innerHTML = list.map(q => {
+        const isChecked = selectedQuestionIndices.includes(q.index);
+        return `
+    <div style="display:flex;align-items:center;gap:6px;padding:8px;background:var(--surface);border-radius:8px;margin-bottom:4px;border:1px solid ${isChecked ? 'var(--primary)' : 'var(--border)'};">
+      <input type="checkbox" style="width:18px;height:18px;cursor:pointer;" ${isChecked ? 'checked' : ''} onchange="toggleQuestionSelection(${q.index}, this.checked)">
+      <div style="font-size:16px;margin-left:4px;">${typeIcons[q.type] || '📋'}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${q.question}</div>
+        <div style="display:flex;gap:6px;margin-top:2px;">
+          <span style="font-size:10px;color:var(--muted);">${q.category}</span>
+          <span style="font-size:10px;color:${diffColors[q.difficulty] || 'var(--muted)'};">${q.difficulty}</span>
+        </div>
+      </div>
+      <button onclick="editQuestion(${q.index})" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:var(--primary);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;">✏️</button>
+      <button onclick="deleteQuestion(${q.index})" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;">🗑️</button>
+    </div>
+  `}).join('');
+    }
+
+    function toggleQuestionSelection(index, isChecked) {
+      if (isChecked) {
+        if (!selectedQuestionIndices.includes(index)) selectedQuestionIndices.push(index);
+      } else {
+        selectedQuestionIndices = selectedQuestionIndices.filter(i => i !== index);
+      }
+      socket.emit('setGameQuestions', selectedQuestionIndices);
+      const selCount = document.getElementById('qListSelectedCount');
+      if (selectedQuestionIndices.length > 0) {
+        selCount.style.display = 'block';
+        selCount.textContent = `📌 ${selectedQuestionIndices.length} soru seçildi`;
+      } else {
+        selCount.style.display = 'none';
+      }
+      filterQuestionsList();
+    }
+
+    function deleteQuestion(index) {
+      if (confirm('Bu soruyu silmek istediğinize emin misiniz?')) {
+        socket.emit('deleteQuestion', { index });
+      }
+    }
+
+    let editingIndex = -1;
+    function editQuestion(index) {
+      socket.emit('getQuestionFull', { index });
+      notify('✏️ Soru yükleniyor...');
+    }
+
+    socket.on('questionFull', (q) => {
+      editingIndex = q.index;
+      setAqType(q.type || 'multi');
+      document.getElementById('aqCategory').value = q.category || '';
+      document.getElementById('aqDifficulty').value = q.difficulty || 'Orta';
+      document.getElementById('aqQuestion').value = q.question || '';
+      document.getElementById('aqAnswer').value = String(q.answer || 0);
+      if (q.type !== 'truefalse' && q.options) {
+        q.options.forEach((opt, i) => {
+          const el = document.getElementById('aqOpt' + i);
+          if (el) el.value = opt;
+        });
+      }
+      if (q.type === 'chess' && q.fen) {
+        const fenEl = document.getElementById('aqFen');
+        if (fenEl) fenEl.value = q.fen;
+      }
+      if (q.type === 'spotdiff') {
+        const g1 = document.getElementById('aqGrid1');
+        const g2 = document.getElementById('aqGrid2');
+        if (g1 && q.grid1) g1.value = q.grid1.join(',');
+        if (g2 && q.grid2) g2.value = q.grid2.join(',');
+      }
+      updateSubmitButton();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    function updateSubmitButton() {
+      const btn = document.querySelector('#screen-addquestion .btn-success');
+      const editBar = document.getElementById('editModeBar');
+      const editIndex = document.getElementById('editModeIndex');
+      if (!btn) return;
+      if (editingIndex >= 0) {
+        btn.innerHTML = '✏️ Soruyu Güncelle';
+        btn.onclick = submitEditedQuestion;
+        if (editBar) editBar.style.display = 'block';
+        if (editIndex) editIndex.textContent = editingIndex;
+      } else {
+        btn.innerHTML = '💾 Soruyu Ekle';
+        btn.onclick = submitNewQuestion;
+        if (editBar) editBar.style.display = 'none';
+      }
+    }
+
+    function cancelEdit() {
+      editingIndex = -1;
+      updateSubmitButton();
+      document.getElementById('aqQuestion').value = '';
+      ['aqOpt0', 'aqOpt1', 'aqOpt2', 'aqOpt3', 'aqFen', 'aqGrid1', 'aqGrid2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    }
+
+    function submitEditedQuestion() {
+      const category = document.getElementById('aqCategory')?.value?.trim();
+      const difficulty = document.getElementById('aqDifficulty')?.value;
+      const question = document.getElementById('aqQuestion')?.value?.trim();
+      const answer = parseInt(document.getElementById('aqAnswer')?.value || '0');
+      if (!category || !question) { notify('❗ Kategori ve soru girin!'); return; }
+      let options = [];
+      if (currentAqType === 'truefalse') {
+        options = ['Doğru', 'Yanlış'];
+      } else {
+        for (let i = 0; i < 4; i++) {
+          const v = document.getElementById('aqOpt' + i)?.value?.trim();
+          if (!v) { notify(`❗ Şık ${String.fromCharCode(65 + i)} boş olamaz!`); return; }
+          options.push(v);
+        }
+      }
+      const data = { category, difficulty, question, options, answer, type: currentAqType };
+      if (currentAqType === 'chess') {
+        const fen = document.getElementById('aqFen')?.value?.trim();
+        if (fen) data.fen = fen;
+      }
+      if (currentAqType === 'spotdiff') {
+        const g1 = document.getElementById('aqGrid1')?.value?.trim();
+        const g2 = document.getElementById('aqGrid2')?.value?.trim();
+        if (g1 && g2) { data.grid1 = g1.split(',').map(s => s.trim()); data.grid2 = g2.split(',').map(s => s.trim()); }
+      }
+      socket.emit('updateQuestion', { index: editingIndex, data });
+    }
+
+    socket.on('questionUpdated', ({ index }) => {
+      notify(`✏️ Soru güncellendi! [#${index}]`);
+      editingIndex = -1;
+      updateSubmitButton();
+      document.getElementById('aqQuestion').value = '';
+    });
+
+    // ─── TAKIM YÖNETİMİ ─────────────────────────────────────────────────
+    function reformTeams(mode) {
+      socket.emit('reformTeams', { mode });
+      notify(`🔄 Takımlar yeniden oluşturuldu: ${mode} mod`);
+    }
+
+    function backToLobby() {
+      socket.emit('backToLobby');
+      notify('🔙 Lobiye dönülüyor...');
+    }
+
+    function createEmptyTeam() {
+      socket.emit('createTeam');
+      notify(`➕ Yeni takım oluşturuldu.`);
+    }
+
+    function manualMovePlayer() {
+      const pSel = document.getElementById('manualPlayerSelect');
+      const tSel = document.getElementById('manualTeamSelect');
+      if (!pSel.value || !tSel.value) { notify('Lütfen oyuncu ve hedef takım seçin!'); return; }
+      socket.emit('movePlayer', { playerId: pSel.value, toTeamId: tSel.value });
+      pSel.value = ''; tSel.value = '';
+    }
+
+    // ─── DRAG AND DROP OYUNCU TAŞIMA ──────────────────────────────────
+    let draggedPlayer = null;
+    function dragPlayer(ev, fromTeamId, playerId) {
+      draggedPlayer = { playerId, fromTeamId };
+      ev.target.style.opacity = '0.5';
+    }
+    document.addEventListener('dragend', (ev) => { if (ev.target && ev.target.style) ev.target.style.opacity = '1'; });
+    function allowDropPlayer(ev) { ev.preventDefault(); }
+    function dropPlayer(ev, toTeamId) {
+      ev.preventDefault();
+      if (!draggedPlayer) return;
+      const { playerId, fromTeamId } = draggedPlayer;
+      if (fromTeamId === toTeamId) return;
+      socket.emit('swapPlayer', { playerId, fromTeamId, toTeamId });
+      draggedPlayer = null;
+    }
+    function dropOnPlayer(ev, toTeamId, targetPlayerId) {
+      ev.preventDefault(); ev.stopPropagation();
+      if (!draggedPlayer) return;
+      const { playerId, fromTeamId } = draggedPlayer;
+      if (fromTeamId === toTeamId || playerId === targetPlayerId) { draggedPlayer = null; return; }
+      socket.emit('exchangePlayers', { playerA: playerId, playerB: targetPlayerId });
+      draggedPlayer = null;
+    }
+
+    function uploadQuestionFile() {
+      const fileInput = document.getElementById('questionFileInput');
+      if (!fileInput || !fileInput.files[0]) { notify('❗ Dosya seçin!'); return; }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          const arr = Array.isArray(data) ? data : (data.questions || []);
+          if (arr.length === 0) { notify('❗ Dosyada soru bulunamadı!'); return; }
+          socket.emit('uploadQuestions', arr);
+        } catch (err) { notify('❗ Geçersiz JSON dosyası!'); }
+      };
+      reader.readAsText(fileInput.files[0]);
+    }
+
+    socket.on('questionsUploaded', ({ added, total }) => {
+      notify(`📦 ${added} soru başarıyla yüklendi! Toplam: ${total}`, 4000);
+    });
+
+    function diffClass(d) { return 'diff-badge diff-' + d.replace(/\s/g, '').replace('Üstü', 'Üstü'); }
+    function updateTimerEl(el, val) {
+      if (!el) return;
+      el.textContent = val;
+      el.classList.remove('warn', 'danger');
+      if (val <= 5) el.classList.add('danger');
+      else if (val <= 10) el.classList.add('warn');
+    }
+
+    // ─── RENDER TEAMS GRID ──────────────────────────────────────────────
+    function renderTeamsGrid(containerId, state, opts = {}) {
+      const grid = document.getElementById(containerId);
+      if (!grid) return;
+      grid.innerHTML = '';
+      Object.entries(state.teams || {}).forEach(([tid, t], idx) => {
+        const color = TEAM_COLORS[idx % TEAM_COLORS.length];
+        const isActive = tid === state.currentTeamId;
+        const div = document.createElement('div');
+        div.className = 'team-card' + (isActive ? ' active-team' : '');
+        div.style.borderLeftColor = color;
+        div.setAttribute('ondragover', 'allowDropPlayer(event)');
+        div.setAttribute('ondrop', `dropPlayer(event, '${tid}')`);
+
+        let membersHtml = (t.members || []).map(m => {
+          const icon = m.isCaptain ? '👑' : (m.hasAnswered ? '<span class="answered-check">✅</span>' : '⬜');
+          const cls = m.isCaptain ? 'captain' : '';
+          let attrs = '';
+          if (isHost && state.phase === 'teams') {
+            attrs += ` style="cursor:grab;" draggable="true" ondragstart="dragPlayer(event, '${tid}', '${m.id}')" ondragover="allowDropPlayer(event)" ondrop="dropOnPlayer(event, '${tid}', '${m.id}')"`;
+          }
+          return `<div class="team-member ${cls}"${attrs}>${icon} ${m.name}</div>`;
+        }).join('');
+
+        div.innerHTML = `
+      <div class="t-name" style="color:${color}">${tid}</div>
+      <div class="t-score">${t.score} <span class="muted small" style="font-size:12px;font-weight:400;">puan</span></div>
+      <div>${membersHtml}</div>
+    `;
+        grid.appendChild(div);
+      });
+    }
+
+    function renderScoreList(containerId, state) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = '';
+      const teams = Object.entries(state.teams || {}).sort((a, b) => b[1].score - a[1].score);
+      teams.forEach(([tid, t], idx) => {
+        const color = TEAM_COLORS[Object.keys(state.teams).indexOf(tid) % TEAM_COLORS.length];
+        const div = document.createElement('div');
+        div.style.cssText = `display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);`;
+        div.innerHTML = `
+      <span style="color:${color};font-weight:600;font-size:14px;">${tid}</span>
+      <span style="font-weight:800;font-size:15px;">${t.score} puan</span>
+    `;
+        el.appendChild(div);
+      });
+    }
+
+    // ─── SOCKET EVENTS ───────────────────────────────────────────────────
+    socket.on('connect', () => { mySocketId = socket.id; });
+
+    socket.on('joined', ({ name, isHost: host, roomCode }) => {
+      myName = name;
+      isHost = host;
+      showScreen('lobby');
+      if (host) { notify('👑 Oda oluşturuldu: ' + roomCode); }
+    });
+
+    socket.on('error', ({ message }) => notify('⚠️ ' + message));
+
+    socket.on('youAreHost', () => {
+      isHost = true;
+      notify('👑 Kurucu rolü size devredildi!');
+    });
+
+    socket.on('hostTransferred', () => {
+      isHost = false;
+      notify('🔄 Kurucu rolünü devrettiniz.');
+    });
+
+    socket.on('gameState', (state) => {
+      lastState = state;
+      const pc = state.playerCount || 0;
+      const jc = document.getElementById('joinCount');
+      if (jc) jc.textContent = pc;
+
+      if (state.phase === 'lobby') {
+        const hasJoined = !!myName || !!isHost;
+        if (!hasJoined) { if (currentScreen !== 'join') showScreen('join'); return; }
+        if (currentScreen !== 'lobby') showScreen('lobby');
+        const codeDisplay = document.getElementById('lobbyCodeDisplay');
+        if (isHost && state.roomCode) {
+          codeDisplay.style.display = 'block';
+          const codeEl = document.getElementById('lobbyRoomCode');
+          if (codeEl.textContent !== state.roomCode) {
+            codeEl.textContent = state.roomCode;
+            const joinUrl = window.location.origin + window.location.pathname + '?room=' + state.roomCode;
+            document.getElementById('lobbyQrCode').src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(joinUrl);
+          }
+        } else { codeDisplay.style.display = 'none'; }
+
+        const plist = document.getElementById('lobbyPlayerList');
+        const players = state.lobbyPlayers || [];
+        const nonHostPlayers = players.filter(p => !p.isHost);
+        const hostPlayer = players.find(p => p.isHost);
+        document.getElementById('lobbyCount').textContent = nonHostPlayers.length;
+        const hostNameEl = document.getElementById('lobbyHostName');
+        if (hostNameEl && hostPlayer) hostNameEl.textContent = hostPlayer.name;
+
+        if (nonHostPlayers.length === 0) { plist.innerHTML = '<span class="muted small">Henüz kimse katılmadı...</span>'; }
+        else { plist.innerHTML = nonHostPlayers.map(p => `<div class="chip"><span class="dot"></span>${p.name}</div>`).join(''); }
+
+        const hostBadge = document.getElementById('lobbyHostBadge');
+        const hostStart = document.getElementById('hostStartWrap');
+        const playerWait = document.getElementById('playerWaitLobby');
+        const hostAddQ = document.getElementById('hostAddQWrap');
+        const hostTransfer = document.getElementById('hostTransferWrap');
+
+        if (hostBadge && hostPlayer) hostBadge.style.display = 'block';
+
+        if (isHost) {
+          hostStart.style.display = pc >= 2 ? 'block' : 'none';
+          hostAddQ.style.display = 'block';
+          hostTransfer.style.display = 'block';
+          playerWait.style.display = 'none';
+          const sel = document.getElementById('transferHostSelect');
+          if (sel) {
+            const currentVal = sel.value;
+            sel.innerHTML = '<option value="">Oyuncu seç...</option>';
+            players.filter(p => !p.isHost).forEach(p => { sel.innerHTML += `<option value="${p.id}">${p.name}</option>`; });
+            if (currentVal) sel.value = currentVal;
+          }
+        } else {
+          hostStart.style.display = 'none';
+          hostAddQ.style.display = 'none';
+          hostTransfer.style.display = 'none';
+          playerWait.style.display = 'block';
+        }
+      }
+
+      if (state.phase === 'teams' && currentScreen !== 'host' && currentScreen !== 'captain' && currentScreen !== 'question' && currentScreen !== 'waiting' && currentScreen !== 'waitcaptain' && currentScreen !== 'result' && currentScreen !== 'scoreboard') {
+        const teamCount = Object.keys(state.teams).length;
+        const isSoloMode = Object.values(state.teams).every(t => t.totalMembers === 1);
+        document.getElementById('teamsInfo').textContent = isSoloMode ? `${teamCount} oyuncu solo yarışıyor!` : `${teamCount} takım oluşturuldu.`;
+        renderTeamsGrid('teamsGridView', state);
+        if (isHost) {
+          document.getElementById('hostBeginWrap').style.display = 'block';
+          document.getElementById('playerWaitTeams').style.display = 'none';
+          const pcTotal = state.totalPlayers || 0;
+          document.getElementById('btnPairsMode').style.display = pcTotal >= 4 ? 'inline-block' : 'none';
+          document.getElementById('btnTrioMode').style.display = pcTotal >= 6 ? 'inline-block' : 'none';
+          const pSel = document.getElementById('manualPlayerSelect');
+          const tSel = document.getElementById('manualTeamSelect');
+          if (pSel && tSel) {
+            pSel.innerHTML = '<option value="">Oyuncu Seç...</option>';
+            tSel.innerHTML = '<option value="">Hedef Takım Seç...</option>';
+            Object.keys(state.teams).forEach(tid => {
+              const team = state.teams[tid];
+              tSel.innerHTML += `<option value="${tid}">${tid}</option>`;
+              team.members.forEach(m => { pSel.innerHTML += `<option value="${m.id}">${m.name} (${tid})</option>`; });
+            });
+          }
+        } else {
+          document.getElementById('hostBeginWrap').style.display = 'none';
+          document.getElementById('playerWaitTeams').style.display = 'block';
+        }
+        showScreen('teams');
+      }
+
+      if (isHost && ['active_round', 'captain_pick'].includes(state.phase)) {
+        if (state.phase === 'captain_pick') {
+          document.getElementById('hostProgress').textContent = state.assignedTeamsCount || 0;
+          document.getElementById('hostTotal').textContent = state.totalTeams || 0;
+          document.getElementById('hostProgressLabel').textContent = 'kaptan seçti';
+          const pct = state.totalTeams > 0 ? Math.round((state.assignedTeamsCount / state.totalTeams) * 100) : 0;
+          document.getElementById('hostProgressBar').style.width = pct + '%';
+          document.getElementById('hostStatusText').textContent = 'Kaptanlar seçiyor...';
+        } else {
+          document.getElementById('hostProgress').textContent = state.answeredTeams || 0;
+          document.getElementById('hostTotal').textContent = state.totalTeams || 0;
+          document.getElementById('hostProgressLabel').textContent = 'takım cevapladı';
+          const pct = state.totalTeams > 0 ? Math.round((state.answeredTeams / state.totalTeams) * 100) : 0;
+          document.getElementById('hostProgressBar').style.width = pct + '%';
+          document.getElementById('hostStatusText').textContent = 'Cevaplar bekleniyor...';
+        }
+        document.getElementById('hostSendBtn').style.display = 'none';
+        const qi = document.getElementById('hostQuestionInfo');
+        qi.style.display = 'block';
+        if (state.currentQuestion) {
+          document.getElementById('hostCatBadge').textContent = state.currentQuestion.category;
+          const hdb = document.getElementById('hostDiffBadge');
+          hdb.textContent = state.currentQuestion.difficulty;
+          hdb.className = diffClass(state.currentQuestion.difficulty);
+        }
+        renderTeamsGrid('hostTeamsGrid', state);
+        if (currentScreen !== 'host') showScreen('host');
+      }
+
+      if (currentScreen === 'waiting') renderTeamsGrid('waitTeamsGrid', state);
+      if (currentScreen === 'waitcaptain') renderTeamsGrid('wcTeamsGrid', state);
+    });
+
+    socket.on('captainPick', ({ category, difficulty, timer, unansweredMembers }) => {
+      document.getElementById('captCatBadge').textContent = category;
+      const cdb = document.getElementById('captDiffBadge');
+      cdb.textContent = difficulty; cdb.className = diffClass(difficulty);
+      document.getElementById('captTimerInfo').textContent = timer;
+      const list = document.getElementById('captainPickList');
+      list.innerHTML = '';
+      unansweredMembers.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'pick-btn';
+        btn.innerHTML = `<div class="avatar">${m.name.charAt(0).toUpperCase()}</div><div style="flex:1;"><div style="font-weight:700;">${m.name} ${m.id === mySocketId ? '<span class="self-tag">SEN</span>' : ''}</div></div>`;
+        btn.onclick = () => { socket.emit('assignPlayer', { targetSocketId: m.id }); btn.disabled = true; };
+        list.appendChild(btn);
+      });
+      showScreen('captain');
+    });
+
+    socket.on('yourQuestion', ({ question, options, category, difficulty, timer, type, fen, grid1, grid2 }) => {
+      document.getElementById('qCatBadge').textContent = category;
+      const qdb = document.getElementById('qDiffBadge');
+      qdb.textContent = difficulty; qdb.className = diffClass(difficulty);
+      
+      const banner = document.getElementById('qModeBanner');
+      banner.innerHTML = `<div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:12px;margin-bottom:18px;">
+        <div style="font-size:12px;color:var(--primary);font-weight:700;">${type === 'chess' ? '♟️ SATRANÇ' : (type === 'spotdiff' ? '🔍 FARK BUL' : '⚡ SORU SİZDE')}</div>
+      </div>`;
+
+      const qTextEl = document.getElementById('questionText');
+      if (type === 'chess' && fen) {
+        qTextEl.innerHTML = question + renderChessBoard(fen);
+      } else if (type === 'spotdiff' && grid1 && grid2) {
+        const cols = Math.ceil(Math.sqrt(grid1.length));
+        const makeGrid = (arr, label) => `<div class="spotdiff-panel"><div class="panel-label">${label}</div><div class="emoji-grid" style="grid-template-columns:repeat(${cols},1fr);">${arr.map(e => `<div class="emoji-cell">${e}</div>`).join('')}</div></div>`;
+        qTextEl.innerHTML = question + `<div class="spotdiff-container">${makeGrid(grid1, 'Orijinal')}${makeGrid(grid2, 'Değişmiş')}</div>`;
+      } else {
+        qTextEl.textContent = question;
+      }
+
+      const grid = document.getElementById('optionsGrid');
+      grid.innerHTML = '';
+      let answered = false;
+      const letters = ['A', 'B', 'C', 'D'];
+
+      if (type === 'truefalse') {
+        grid.className = 'tf-grid';
+        options.forEach((opt, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'tf-btn ' + (idx === 0 ? 'tf-true' : 'tf-false');
+          btn.innerHTML = (idx === 0 ? '✅ ' : '❌ ') + opt;
+          btn.onclick = () => { if (answered) return; answered = true; socket.emit('submitAnswer', { answerIndex: idx }); };
+          grid.appendChild(btn);
+        });
+      } else {
+        grid.className = 'options-list' + (type === 'chess' ? ' chess-options' : '');
+        options.forEach((opt, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'opt-btn';
+          btn.innerHTML = `<div class="opt-letter">${letters[idx]}</div><div>${opt}</div>`;
+          btn.onclick = () => { if (answered) return; answered = true; socket.emit('submitAnswer', { answerIndex: idx }); };
+          grid.appendChild(btn);
+        });
+      }
+      showScreen('question');
+    });
+
+    socket.on('answerAck', ({ isCorrect, points, correctAnswerIndex, timeTaken }) => {
+      const banner = document.getElementById('qModeBanner');
+      if (!banner) return;
+      banner.innerHTML = `<div style="background:${isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)'};border:2px solid ${isCorrect ? 'var(--success)' : 'var(--error)'};border-radius:10px;padding:14px;margin-bottom:18px;text-align:center;">
+        <div style="font-size:20px;font-weight:bold;color:${isCorrect ? 'var(--success)' : 'var(--error)'};">${isCorrect ? '✅ DOĞRU!' : '❌ YANLIŞ!'}</div>
+        <div style="font-size:13px;margin-top:4px;">${timeTaken} sn · ${points} puan</div>
+      </div>`;
+    });
+
+    socket.on('waitingFor', ({ playerName, teamId, category, difficulty }) => {
+      if (isHost) return;
+      document.getElementById('waitPlayerName').textContent = playerName;
+      document.getElementById('waitInfo').textContent = `${teamId} takımı adına cevaplıyor.`;
+      document.getElementById('waitCatBadge').textContent = category;
+      const wdb = document.getElementById('waitDiffBadge');
+      wdb.textContent = difficulty; wdb.className = diffClass(difficulty);
+      renderTeamsGrid('waitTeamsGrid', lastState);
+      showScreen('waiting');
+    });
+
+    socket.on('waitingForCaptain', ({ captainName, teamId, category, difficulty }) => {
+      if (isHost) return;
+      document.getElementById('wcCaptainName').textContent = captainName;
+      document.getElementById('wcCatBadge').textContent = category;
+      const wcdb = document.getElementById('wcDiffBadge');
+      wcdb.textContent = difficulty; wcdb.className = diffClass(difficulty);
+      renderTeamsGrid('wcTeamsGrid', lastState);
+      showScreen('waitcaptain');
+    });
+
+    socket.on('timerTick', ({ value }) => {
+      ['qTimer', 'waitTimer', 'hostTimer'].forEach(id => updateTimerEl(document.getElementById(id), value));
+    });
+
+    socket.on('roundResult', ({ correctAnswerText, correctAnswerIndex, results }) => {
+      document.getElementById('resIcon').textContent = '🎉';
+      document.getElementById('resTitle').textContent = 'Tur Sonucu';
+      document.getElementById('resCorrectText').textContent = correctAnswerText;
+
+      const myTeamId = Object.keys(lastState.teams).find(tid => lastState.teams[tid].members.some(m => m.id === mySocketId));
+      const mb = document.getElementById('resMyTeamBox');
+      if (!isHost && myTeamId && results[myTeamId]) {
+        const myRes = results[myTeamId];
+        mb.style.display = 'flex';
+        document.getElementById('resMyIcon').textContent = myRes.isCorrect ? '✅' : '❌';
+        document.getElementById('resMyPoints').textContent = (myRes.points > 0 ? '+' : '') + myRes.points;
+      } else { mb.style.display = 'none'; }
+
+      const rGrid = document.getElementById('resRoundGrid');
+      rGrid.innerHTML = Object.entries(results).map(([tid, res]) => `<div style="background:rgba(255,255,255,0.05);border-left:4px solid ${res.isCorrect ? 'var(--success)' : 'var(--error)'};padding:8px;border-radius:6px;display:flex;justify-content:space-between;align-items:center;"><div>${tid}</div><div>${res.points}p</div></div>`).join('');
+
+      renderScoreList('resScoreList', lastState);
+
+      if (isHost) {
+        document.getElementById('resHostBtns').style.display = 'flex';
+        document.getElementById('resPlayerWait').style.display = 'none';
+        const btnNext = document.getElementById('btnNextQuestion');
+        if (btnNext) btnNext.style.display = lastState.currentQuestionIndex >= lastState.maxQuestions ? 'none' : 'block';
+      } else {
+        document.getElementById('resHostBtns').style.display = 'none';
+        document.getElementById('resPlayerWait').style.display = 'block';
+      }
+
+      // Satranç sorusuysa tahtayı sonuç ekranında da göster
+      const resChessBoard = document.getElementById('resChessBoard');
+      if (lastState.currentQuestion && lastState.currentQuestion.type === 'chess' && lastState.currentQuestion.fen) {
+        resChessBoard.innerHTML = renderChessBoard(lastState.currentQuestion.fen);
+        resChessBoard.style.display = 'block';
+      } else {
+        resChessBoard.style.display = 'none';
+      }
+
+      showScreen('result');
+    });
+
+    socket.on('gameOver', (scores) => {
+      const list = document.getElementById('finalScoreList');
+      list.innerHTML = '';
+      scores.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.style.padding = '12px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;';
+        div.innerHTML = `<div>${i + 1}. ${s.teamId}</div><div>${s.score}p</div>`;
+        list.appendChild(div);
+      });
+      document.getElementById('sbHostBtns').style.display = isHost ? 'block' : 'none';
+      showScreen('scoreboard');
+    });
+
+    socket.on('gameRestarted', () => { window.location.reload(); });
+
+    window.onload = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const room = urlParams.get('room');
+      if (room && room.length === 4) {
+        document.getElementById('roomCodeInput').value = room;
+        document.getElementById('playerNameInput').focus();
+      }
+    };
+  </script>
+</body>
+</html>

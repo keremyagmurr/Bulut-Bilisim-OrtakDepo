@@ -1,0 +1,29 @@
+# ============================================================
+# PersistentVolumeClaim: Kalıcı Veri Depolama
+# Linode Block Storage kullanarak soru bankası verilerini
+# pod yeniden başlatmalarında korur
+# ============================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trivia-data-pvc
+  namespace: trivia-node
+  labels:
+    app: trivia-node
+spec:
+  accessModes:
+    - ReadWriteOnce          # Tek node'dan okuma/yazma
+  storageClassName: linode-block-storage-retain
+  resources:
+    requests:
+      storage: 10Gi          # 10 GB kalıcı depolama
+
+# ──────────────────────────────────────────────────────────────
+# NOT: Linode Kubernetes Engine (LKE) otomatik olarak
+# "linode-block-storage-retain" StorageClass'ı sağlar.
+# PVC oluşturulduğunda Linode otomatik olarak bir
+# Block Storage Volume oluşturur ve Pod'a bağlar.
+#
+# Eğer StorageClass bulunamazsa şunu deneyin:
+#   storageClassName: linode-block-storage
+# ──────────────────────────────────────────────────────────────

@@ -1,0 +1,45 @@
+# ============================================================
+# HorizontalPodAutoscaler: Otomatik Yatay Ölçeklendirme
+# CPU kullanımı %70'i aşarsa otomatik Pod sayısını artırır
+# Min: 2, Max: 10 Pod
+# ============================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: trivia-node-hpa
+  namespace: trivia-node
+  labels:
+    app: trivia-node
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: trivia-node
+  minReplicas: 2                   # Minimum 2 Pod (yüksek erişilebilirlik)
+  maxReplicas: 10                  # Maksimum 10 Pod (maliyet kontrolü)
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70   # CPU %70'i aşarsa scale up
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80   # Bellek %80'i aşarsa scale up
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120   # 2 dk bekle sonra scale down
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60              # Her 60 sn'de en fazla 1 Pod kapat
+    scaleUp:
+      stabilizationWindowSeconds: 30    # 30 sn bekle sonra scale up
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60              # Her 60 sn'de en fazla 2 Pod aç

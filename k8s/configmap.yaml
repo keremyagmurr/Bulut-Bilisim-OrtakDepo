@@ -1,0 +1,17 @@
+# ============================================================
+# ConfigMap: Uygulama Yapılandırması
+# Environment variables'ı dışsallaştırarak yönetimi kolaylaştırır
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trivia-node-config
+  namespace: trivia-node
+  labels:
+    app: trivia-node
+data:
+  PORT: "3000"
+  NODE_ENV: "production"
+  APP_NAME: "Trivia Node: Kaptan'ın Seçimi"
+  MAX_PLAYERS: "50"
+  LOG_LEVEL: "info"

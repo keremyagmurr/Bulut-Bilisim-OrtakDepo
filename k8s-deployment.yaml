@@ -1,0 +1,90 @@
+# Kubernetes Deployment — Trivia Node: Kaptan'ın Seçimi
+# Kullanım: kubectl apply -f k8s-deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trivia-node
+  labels:
+    app: trivia-node
+spec:
+  replicas: 3          # 3 Pod — Load Balancer testi için
+  selector:
+    matchLabels:
+      app: trivia-node
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: trivia-node
+    spec:
+      containers:
+        - name: trivia-node
+          image: trivia-node:latest    # docker build -t trivia-node:latest . 
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              value: "production"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:           # Self-healing için
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+---
+# Service — LoadBalancer (Ingress gibi dışarıya açar)
+apiVersion: v1
+kind: Service
+metadata:
+  name: trivia-node-service
+spec:
+  selector:
+    app: trivia-node
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer     # GKE/AWS'de gerçek IP verir; Minikube'de NodePort kullanın
+
+---
+# Horizontal Pod Autoscaler — Yük testinde otomatik ölçeklenir
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: trivia-node-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: trivia-node
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

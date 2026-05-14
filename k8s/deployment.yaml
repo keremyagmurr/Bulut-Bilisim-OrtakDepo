@@ -1,0 +1,91 @@
+# ============================================================
+# Deployment: Trivia Node Uygulaması
+# - 3 Replica (Yüksek erişilebilirlik)
+# - RollingUpdate stratejisi (Kesintisiz güncelleme)
+# - revisionHistoryLimit: 5 (Rollback desteği)
+# - Liveness & Readiness Probes (Self-healing)
+# - ConfigMap entegrasyonu
+# - PersistentVolume mount
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trivia-node
+  namespace: trivia-node
+  labels:
+    app: trivia-node
+    version: v1
+spec:
+  replicas: 3                      # 3 Pod — Yük dengeleme için
+  revisionHistoryLimit: 5          # Son 5 sürümü sakla (rollback için)
+  selector:
+    matchLabels:
+      app: trivia-node
+  strategy:
+    type: RollingUpdate            # Kesintisiz güncelleme
+    rollingUpdate:
+      maxSurge: 1                  # Güncelleme sırasında +1 Pod fazladan açılabilir
+      maxUnavailable: 0            # Güncelleme sırasında hiç Pod kapatılmaz (sıfır kesinti)
+  template:
+    metadata:
+      labels:
+        app: trivia-node
+        version: v1
+    spec:
+      containers:
+        - name: trivia-node
+          # ─── DockerHub image (CI/CD pipeline tarafından güncellenir) ───
+          image: DOCKERHUB_USER/trivia-node:latest
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+
+          # ─── Environment Variables (ConfigMap'ten) ───
+          envFrom:
+            - configMapRef:
+                name: trivia-node-config
+
+          # ─── Kaynak Limitleri ───
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+
+          # ─── Liveness Probe: Pod sağlık kontrolü (Self-healing) ───
+          # Pod yanıt vermezse otomatik yeniden başlatılır
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # ─── Readiness Probe: Trafik yönlendirme kontrolü ───
+          # Pod hazır olana kadar Service trafiği yönlendirmez
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # ─── Volume Mount: Kalıcı veri deposu ───
+          volumeMounts:
+            - name: trivia-data
+              mountPath: /app/data     # Soru bankası ve log verileri
+
+      # ─── Volumes ───
+      volumes:
+        - name: trivia-data
+          persistentVolumeClaim:
+            claimName: trivia-data-pvc

@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log*
+.git
+.gitignore
+README.md
+docker-compose*.yml
+k8s/
+jenkins/
+Jenkinsfile
+.dockerignore
+*.md
+.env
+.env.*
+{public,src}
