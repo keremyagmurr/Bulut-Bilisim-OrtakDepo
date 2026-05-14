@@ -9,7 +9,7 @@ pipeline {
     environment {
         // DockerHub credentials (Jenkins'te tanımlanmalı)
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        DOCKER_IMAGE = 'DOCKERHUB_USER/trivia-node'
+        DOCKER_IMAGE = 'huseyinkonak41/trivia-node'
         K8S_NAMESPACE = 'trivia-node'
     }
 

@@ -16,7 +16,7 @@ metadata:
     app: trivia-node
     version: v1
 spec:
-  replicas: 3                      # 3 Pod — Yük dengeleme için
+  replicas: 2                      # 2 Pod — Yüksek erişilebilirlik
   revisionHistoryLimit: 5          # Son 5 sürümü sakla (rollback için)
   selector:
     matchLabels:
@@ -35,7 +35,7 @@ spec:
       containers:
         - name: trivia-node
           # ─── DockerHub image (CI/CD pipeline tarafından güncellenir) ───
-          image: DOCKERHUB_USER/trivia-node:latest
+          image: huseyinkonak41/trivia-node:latest
           imagePullPolicy: Always
 
           ports:

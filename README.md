@@ -321,12 +321,12 @@ spec:
 # 1. Kod değişikliği yapın (örn: server.js'de bir renk değiştirin)
 
 # 2. Yeni Docker image oluşturun
-docker build -t DOCKERHUB_USER/trivia-node:v2 .
-docker push DOCKERHUB_USER/trivia-node:v2
+docker build -t huseyinkonak41/trivia-node:v2 .
+docker push huseyinkonak41/trivia-node:v2
 
 # 3. Kubernetes'te güncelleme başlatın
 kubectl set image deployment/trivia-node \
-    trivia-node=DOCKERHUB_USER/trivia-node:v2 \
+    trivia-node=huseyinkonak41/trivia-node:v2 \
     -n trivia-node
 
 # 4. Güncelleme durumunu izleyin
@@ -511,7 +511,7 @@ kubectl get pods -n trivia-node -w
 ```bash
 # Canlı güncelleme — Oyun hiç durmaz!
 kubectl set image deployment/trivia-node \
-    trivia-node=DOCKERHUB_USER/trivia-node:v2 -n trivia-node
+    trivia-node=huseyinkonak41/trivia-node:v2 -n trivia-node
 kubectl rollout status deployment/trivia-node -n trivia-node
 ```
 
