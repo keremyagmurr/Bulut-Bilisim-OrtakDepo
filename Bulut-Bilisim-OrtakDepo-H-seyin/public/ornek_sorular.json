@@ -1,0 +1,50 @@
+[
+  {
+    "category": "Docker",
+    "difficulty": "Kolay",
+    "type": "multi",
+    "question": "Docker konteynerlerini listelemek için hangi komut kullanılır?",
+    "options": ["docker list", "docker ps", "docker show", "docker containers"],
+    "answer": 1
+  },
+  {
+    "category": "Docker",
+    "difficulty": "Orta",
+    "type": "multi",
+    "question": "Dockerfile'da CMD ve ENTRYPOINT farkı nedir?",
+    "options": [
+      "CMD override edilebilir, ENTRYPOINT edilemez",
+      "İkisi aynıdır",
+      "ENTRYPOINT sadece Linux'ta çalışır",
+      "CMD sadece build sırasında çalışır"
+    ],
+    "answer": 0
+  },
+  {
+    "category": "Kubernetes",
+    "difficulty": "Kolay",
+    "type": "truefalse",
+    "question": "Kubernetes'te en küçük deploy edilebilir birim Pod'dur.",
+    "options": ["Doğru", "Yanlış"],
+    "answer": 0
+  },
+  {
+    "category": "Satranç",
+    "difficulty": "Orta",
+    "type": "chess",
+    "question": "Beyaz oynar. En iyi hamle nedir?",
+    "fen": "r1bqkbnr/pppppppp/2n5/4N3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
+    "options": ["Nxc6", "Nf3", "d4", "Bc4"],
+    "answer": 0
+  },
+  {
+    "category": "Fark Bul",
+    "difficulty": "Kolay",
+    "type": "spotdiff",
+    "question": "Hangi emoji farklı?",
+    "grid1": ["🎮", "🎯", "🎲", "🎸", "🎵", "🎹", "🎺", "🎻", "🥁"],
+    "grid2": ["🎮", "🎯", "🎲", "🎸", "🎵", "🎹", "🎺", "🎤", "🥁"],
+    "options": ["Satır 3 Sütun 2 (🎻→🎤)", "Satır 1 Sütun 1", "Satır 2 Sütun 3", "Satır 3 Sütun 3"],
+    "answer": 0
+  }
+]

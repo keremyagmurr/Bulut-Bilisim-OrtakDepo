@@ -1,0 +1,26 @@
+[
+  {
+    "category": "Genel Kültür",
+    "difficulty": "Kolay",
+    "type": "multi",
+    "question": "Türkiye'nin başkenti neresidir?",
+    "options": ["İstanbul", "Ankara", "İzmir", "Bursa"],
+    "answer": 1
+  },
+  {
+    "category": "Genel Kültür",
+    "difficulty": "Orta",
+    "type": "truefalse",
+    "question": "Dünyanın en büyük okyanusu Atlas Okyanusu'dur.",
+    "options": ["Doğru", "Yanlış"],
+    "answer": 1
+  },
+  {
+    "category": "Bilim",
+    "difficulty": "Orta",
+    "type": "multi",
+    "question": "Sıvı haldeki suyun gaz haline geçmesine ne ad verilir?",
+    "options": ["Donma", "Yoğuşma", "Buharlaşma", "Süblimleşme"],
+    "answer": 2
+  }
+]

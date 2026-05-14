@@ -1,0 +1,14 @@
+{
+  "name": "trivia-node",
+  "version": "1.0.0",
+  "description": "Trivia Node: Kaptan'ın Seçimi - Gerçek zamanlı sınıf quiz oyunu",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "npx nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}
