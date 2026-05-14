@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Trivia Node: Tactical Battle v1.9.1</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@500;900&display=swap" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root { --red: #ff4757; --blue: #2e86de; --bg: #05080f; --card: #111827; --primary: #4ade80; --amber: #fca311; }
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg); color: #e2e8f0; margin: 0; overflow: hidden; }
+        h1, h2, h3 { font-family: 'Orbitron', sans-serif; letter-spacing: 2px; }
+
+        .game-grid { display: grid; grid-template-columns: 320px 1fr 320px; height: 100vh; }
+        .side-panel { padding: 30px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.05); }
+        .active-side { border-bottom: 5px solid white; box-shadow: 0 0 30px rgba(255,255,255,0.1); }
+        .red-side { border-right: 3px solid var(--red); }
+        .blue-side { border-left: 3px solid var(--blue); }
+
+        /* SOLUK ŞIKLAR (Spectator Mode) */
+        .opt-faded { opacity: 0.25; filter: grayscale(0.5); pointer-events: none; }
+
+        .btn { padding: 14px; border-radius: 12px; cursor: pointer; border: none; font-weight: 800; width: 100%; text-transform: uppercase; transition: 0.2s; }
+        .btn-select { background: var(--amber); color: #000; font-size: 0.75rem; padding: 8px 16px; width: auto; font-weight: 900; }
+        .btn-action { background: var(--primary); color: #000; font-size: 1.2rem; box-shadow: 0 0 25px var(--primary); }
+        
+        .opt-label { color: var(--primary); font-weight: 900; margin-right: 10px; font-family: 'Orbitron'; }
+
+        .player-item { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #334155; }
+        .self-node { border: 2px solid var(--primary) !important; background: rgba(74, 222, 128, 0.05) !important; }
+
+        .main-stage { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 40px; }
+        .timer-display { position: absolute; top: 40px; font-size: 4.5rem; font-family: 'Orbitron'; font-weight: 900; }
+
+        /* KATEGORİ HUD */
+        .cat-title { font-size: 2.8rem; color: var(--amber); text-shadow: 0 0 25px var(--amber); margin-bottom: 20px; text-transform: uppercase; }
+
+        /* FINAL EKRANI (Ortalanmış) */
+        .win-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: none; grid-template-columns: 1fr 1.5fr 1fr; align-items: center; padding: 50px; text-align: center; }
+        .final-side { padding: 40px; border-radius: 25px; background: rgba(255,255,255,0.02); min-height: 450px; border: 2px solid transparent; }
+        .final-center { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .final-member { font-size: 1.2rem; font-weight: 700; color: #bbb; margin: 12px 0; display: flex; justify-content: space-between; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; }
+
+        #lobby { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body id="game-body">
+
+<div id="lobby">
+    <div style="background:var(--card); padding:50px; border-radius:30px; width:450px; border: 1px solid #1e293b; text-align:center;">
+        <h1 style="color:var(--primary); margin-bottom:30px;">TRIVIA NODE</h1>
+        <input type="text" id="p-name" placeholder="İsminiz..." style="width:100%; padding:18px; border-radius:15px; margin-bottom:20px; background:#000; color:#fff; border:1px solid #334155; text-align:center; font-size:1.2rem;">
+        <div style="display:flex; gap:15px; margin-bottom:20px;">
+            <button class="btn" style="background:var(--red); color:#fff;" onclick="join('red')">KIRMIZI</button>
+            <button class="btn" style="background:var(--blue); color:#fff;" onclick="join('blue')">MAVİ</button>
+        </div>
+        <select id="p-role" style="width:100%; padding:15px; border-radius:15px; background:#000; color:#fff; border:1px solid #334155;">
+            <option value="pod">OYUNCU (POD)</option>
+            <option value="ingress">KAPTAN (INGRESS)</option>
+        </select>
+    </div>
+</div>
+
+<div id="final-screen" class="win-overlay">
+    <div class="final-side" style="border-color: var(--red);">
+        <h3 style="color:var(--red); font-size:0.9rem;">KIRMIZI KAPTAN</h3>
+        <h2 id="final-cap-red" style="font-size: 2.2rem; margin-bottom:20px;">---</h2>
+        <div id="final-members-red"></div>
+    </div>
+    <div class="final-center">
+        <h1 id="winner-text" style="font-size: 5rem; line-height: 1.1; margin-bottom: 25px; text-align: center;"></h1>
+        <h2 id="final-score-text" style="color:#64748b; margin-bottom:40px; font-size: 2.5rem; text-align: center;"></h2>
+        <button id="restart-btn" class="btn btn-action" onclick="restartGame()" style="display:none; width: 350px;">SİSTEMİ YENİDEN BAŞLAT</button>
+    </div>
+    <div class="final-side" style="border-color: var(--blue);">
+        <h3 style="color:var(--blue); font-size:0.9rem;">MAVİ KAPTAN</h3>
+        <h2 id="final-cap-blue" style="font-size: 2.2rem; margin-bottom:20px;">---</h2>
+        <div id="final-members-blue"></div>
+    </div>
+</div>
+
+<div class="game-grid">
+    <div class="side-panel red-side" id="red-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+            <h2 id="red-name-display" style="color:var(--red); font-size:1.4rem;">RED</h2>
+            <span style="background:#fff; color:#000; padding:4px 12px; border-radius:20px; font-weight:900;" id="red-score">0</span>
+        </div>
+        <div id="red-captain"></div>
+        <div id="red-list" style="margin-top:20px;"></div>
+    </div>
+
+    <div class="main-stage">
+        <div id="timer" class="timer-display">01:00</div>
+        <div id="game-hud" style="margin-top:140px; text-align:center;">
+            <div class="cat-title" id="cat-preview">...</div>
+            <div id="turn-msg" style="padding:15px 70px; border-radius:50px; font-weight:900; text-transform:uppercase; font-family:'Orbitron';">...</div>
+        </div>
+        
+        <div id="q-box" style="display:none; margin-top:35px; background:var(--card); padding:45px; border-radius:30px; border:1px solid #1e293b; width:100%; max-width:650px;">
+            <h2 id="q-text" style="font-weight:700; line-height:1.4; margin-bottom:30px;">...</h2>
+            <div id="opts" style="display:grid; grid-template-columns:1fr 1fr; gap:15px;"></div>
+        </div>
+
+        <button id="show-btn" class="btn btn-action" style="display:none; width:450px; margin-top:40px;" onclick="reveal()">SORUYU GÖSTER</button>
+        <div id="waiting-msg" style="margin-top:40px; color:#64748b; font-weight:800; text-transform:uppercase;"></div>
+    </div>
+
+    <div class="side-panel blue-side" id="blue-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+            <h2 id="blue-name-display" style="color:var(--blue); font-size:1.4rem;">BLUE</h2>
+            <span style="background:#fff; color:#000; padding:4px 12px; border-radius:20px; font-weight:900;" id="blue-score">0</span>
+        </div>
+        <div id="blue-captain"></div>
+        <div id="blue-list" style="margin-top:20px;"></div>
+    </div>
+</div>
+
+<script>
+    const socket = io();
+    let my = { name: '', role: '', team: '' };
+    let currentState = {};
+    let players = [];
+
+    function join(team) {
+        my.name = document.getElementById('p-name').value;
+        my.role = document.getElementById('p-role').value;
+        my.team = team;
+        if(my.name) { socket.emit('join', my); document.getElementById('lobby').style.display = 'none'; }
+    }
+
+    function restartGame() { socket.emit('resetSystem'); }
+    socket.on('fullReset', () => { location.reload(); });
+
+    socket.on('syncState', (state) => { currentState = state; updateUI(); });
+    socket.on('timerTick', (sec) => { document.getElementById('timer').innerText = `00:${String(sec).padStart(2,'0')}`; });
+    socket.on('updatePlayerList', (list) => { players = list; renderPlayerLists(); });
+
+    function renderPlayerLists() {
+        ['red', 'blue'].forEach(t => {
+            const teamPlayers = players.filter(p => p.team === t);
+            const cap = teamPlayers.find(p => p.role === 'ingress');
+            const pods = teamPlayers.filter(p => p.role === 'pod');
+
+            document.getElementById(`${t}-captain`).innerHTML = cap ? `<div class="player-item ${cap.name === my.name ? 'self-node' : ''}" style="border-color:gold">👑 ${cap.name}</div>` : 'Kaptan Bekleniyor...';
+            document.getElementById(`${t}-list`).innerHTML = pods.map(p => {
+                const canSelect = (currentState.turn === t && my.role === 'ingress' && my.team === t && currentState.stage === 'picking');
+                return `<div class="player-item ${p.name === my.name ? 'self-node' : ''}">
+                    <div>${p.name}</div>
+                    ${canSelect ? `<button class="btn btn-select" onclick="socket.emit('pickPlayer', '${p.name}')">SEÇ</button>` : ''}
+                </div>`;
+            }).join('');
+        });
+    }
+
+    function updateUI() {
+        const s = currentState;
+        if (s.stage === 'finished') {
+            document.getElementById('final-screen').style.display = 'grid';
+            const winner = s.scores.red >= s.winThreshold ? s.teamNames.red : s.teamNames.blue;
+            document.getElementById('winner-text').innerHTML = winner + "<br>KAZANDI!";
+            document.getElementById('winner-text').style.color = s.scores.red >= s.winThreshold ? 'var(--red)' : 'var(--blue)';
+            document.getElementById('final-score-text').innerText = `${s.scores.red} - ${s.scores.blue}`;
+            if (my.role === 'ingress') document.getElementById('restart-btn').style.display = 'block';
+
+            const redCap = players.find(p => p.team === 'red' && p.role === 'ingress');
+            const blueCap = players.find(p => p.team === 'blue' && p.role === 'ingress');
+            document.getElementById('final-cap-red').innerText = redCap ? redCap.name : '---';
+            document.getElementById('final-cap-blue').innerText = blueCap ? blueCap.name : '---';
+
+            ['red', 'blue'].forEach(t => {
+                const teamPods = players.filter(p => p.team === t && p.role === 'pod');
+                document.getElementById(`final-members-${t}`).innerHTML = teamPods.map(p => `
+                    <div class="final-member">
+                        <span>${p.name}</span>
+                        <span style="color:rgba(255,255,255,0.2); font-size:0.85rem; font-weight:400;">${s.playerPoints[p.name] || 0} PTS</span>
+                    </div>`).join('');
+            });
+            return;
+        }
+
+        document.getElementById('red-score').innerText = s.scores.red;
+        document.getElementById('blue-score').innerText = s.scores.blue;
+        document.getElementById('cat-preview').innerText = s.nextCategory;
+        document.getElementById('red-panel').classList.toggle('active-side', s.turn === 'red');
+        document.getElementById('blue-panel').classList.toggle('active-side', s.turn === 'blue');
+
+        const msg = document.getElementById('turn-msg');
+        msg.innerText = `${s.teamNames[s.turn]} SIRASI`;
+        msg.style.background = s.turn === 'red' ? 'var(--red)' : 'var(--blue)';
+
+        const qBox = document.getElementById('q-box');
+        const showBtn = document.getElementById('show-btn');
+        const waitMsg = document.getElementById('waiting-msg');
+
+        if(s.stage === 'picking') {
+            qBox.style.display = 'none'; showBtn.style.display = 'none';
+            waitMsg.innerText = "KAPTAN OYUNCU SEÇİYOR...";
+        } else if(s.stage === 'showing') {
+            waitMsg.innerText = `${s.activePlayer.toUpperCase()} SEÇİLDİ!`;
+            showBtn.style.display = (my.role === 'ingress' && my.team === s.turn) ? 'block' : 'none';
+        } else if(s.stage === 'answering') {
+            showBtn.style.display = 'none'; qBox.style.display = 'block';
+            renderQuestion();
+        }
+        renderPlayerLists();
+    }
+
+    function renderQuestion() {
+        const q = currentState.currentQuestion;
+        if(!q) return;
+        
+        const isTarget = (my.name === currentState.activePlayer);
+        document.getElementById('q-text').innerText = q.text;
+        
+        const optGrid = document.getElementById('opts');
+        optGrid.innerHTML = q.shuffledOpts.map((o, idx) => {
+            const letter = ['A', 'B', 'C', 'D'][idx];
+            // SOLUK EFEKT (Faded Mode)
+            const spectatorClass = isTarget ? '' : 'opt-faded';
+            
+            return `
+            <button class="btn ${spectatorClass}" style="background:#1e293b; color:#fff; border:1px solid #334155; margin-bottom:5px; text-align:left;" 
+                onclick="submitAnswer('${o === q.ans}')">
+                <span class="opt-label">${letter}:</span> ${o}
+            </button>`;
+        }).join('');
+    }
+
+    function submitAnswer(isCorrect) {
+        if(my.name !== currentState.activePlayer) return;
+        socket.emit('submitAnswer', isCorrect === 'true');
+    }
+    function reveal() { socket.emit('startTimer'); }
+</script>
+</body>
+</html>
