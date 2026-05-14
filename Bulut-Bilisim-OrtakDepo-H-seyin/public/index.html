@@ -1,0 +1,2984 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ClusterQuiz — Takım Quiz Oyunu</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg: #0c0c1d;
+      --surface: #151530;
+      --card: #1c1c3d;
+      --border: #2d2d5e;
+      --text: #e4e4f0;
+      --muted: #8080aa;
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.3);
+      --secondary: #f43f5e;
+      --success: #22c55e;
+      --warning: #eab308;
+      --error: #ef4444;
+      --orange: #f97316;
+      --radius: 14px;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 85% 90%, rgba(244, 63, 94, 0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      text-align: center;
+      padding: 20px 0 16px;
+    }
+
+    .header .badge {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--primary);
+      font-weight: 700;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      padding: 4px 14px;
+      border-radius: 50px;
+      margin-bottom: 10px;
+    }
+
+    .header h1 {
+      font-size: clamp(22px, 6vw, 34px);
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+
+    .header .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 14px;
+      font-weight: 700;
+    }
+
+    .card-glow {
+      border-color: var(--primary);
+      box-shadow: 0 0 30px var(--primary-glow), var(--shadow);
+    }
+
+    /* ── INPUT ── */
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+    }
+
+    input::placeholder {
+      color: var(--muted);
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 13px 22px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #818cf8);
+      color: #fff;
+      box-shadow: 0 4px 20px var(--primary-glow);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      box-shadow: 0 6px 28px rgba(99, 102, 241, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--success), #16a34a);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--error), #dc2626);
+      color: #fff;
+    }
+
+    .btn-ghost {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-lg {
+      padding: 16px 28px;
+      font-size: 16px;
+      border-radius: 14px;
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .btn-xl {
+      padding: 20px 32px;
+      font-size: 18px;
+      border-radius: 16px;
+    }
+
+    /* ── CHIPS ── */
+    .chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      animation: chipIn 0.3s ease;
+    }
+
+    @keyframes chipIn {
+      from {
+        opacity: 0;
+        transform: scale(0.85);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .chip .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+    }
+
+    .chip-host {
+      border-color: var(--warning);
+      color: var(--warning);
+    }
+
+    /* ── TEAM CARDS ── */
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .team-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      border-left: 4px solid var(--primary);
+      transition: all 0.3s;
+    }
+
+    .team-card.active-team {
+      border-left-color: var(--warning);
+      box-shadow: 0 0 20px rgba(234, 179, 8, 0.15);
+    }
+
+    .team-card .t-name {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .team-card .t-score {
+      font-size: 26px;
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+
+    .team-member {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 0;
+    }
+
+    .team-member.captain {
+      color: var(--warning);
+      font-weight: 600;
+    }
+
+    .team-member .answered-check {
+      color: var(--success);
+    }
+
+    /* ── DIFFICULTY BADGES ── */
+    .diff-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .diff-Kolay {
+      background: rgba(34, 197, 94, 0.12);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .diff-Orta {
+      background: rgba(234, 179, 8, 0.12);
+      color: var(--warning);
+      border: 1px solid rgba(234, 179, 8, 0.3);
+    }
+
+    .diff-OrtaÜstü {
+      background: rgba(249, 115, 22, 0.12);
+      color: var(--orange);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+    }
+
+    .diff-Zor {
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--error);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .cat-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      padding: 5px 14px;
+      border-radius: 50px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ── MEMBER PICK BUTTONS ── */
+    .pick-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pick-btn {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: inherit;
+    }
+
+    .pick-btn:hover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.08);
+      transform: translateX(4px);
+    }
+
+    .pick-btn:active {
+      transform: scale(0.98);
+    }
+
+    .pick-btn .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 900;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    /* ── OPTION BUTTONS ── */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .opt-btn {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 15px 18px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: inherit;
+    }
+
+    .opt-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    .opt-btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .opt-btn:disabled {
+      cursor: not-allowed;
+    }
+
+    .opt-btn.selected {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.15);
+    }
+
+    .opt-btn.correct {
+      border-color: var(--success);
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .opt-btn.wrong {
+      border-color: var(--error);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .opt-letter {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    /* ── TIMER ── */
+    .timer-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timer-circle {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 4px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 900;
+      transition: border-color 0.4s, color 0.4s;
+    }
+
+    .timer-circle.warn {
+      border-color: var(--warning);
+      color: var(--warning);
+    }
+
+    .timer-circle.danger {
+      border-color: var(--error);
+      color: var(--error);
+      animation: pulse 0.5s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1)
+      }
+
+      50% {
+        transform: scale(1.06)
+      }
+    }
+
+    /* ── PROGRESS ── */
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--surface);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── RESULT ── */
+    .result-icon {
+      font-size: 56px;
+      text-align: center;
+      margin-bottom: 12px;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(0)
+      }
+
+      to {
+        transform: scale(1)
+      }
+    }
+
+    .result-title {
+      font-size: 24px;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .result-title.correct {
+      color: var(--success);
+    }
+
+    .result-title.wrong {
+      color: var(--error);
+    }
+
+    .points-display {
+      text-align: center;
+      font-size: 32px;
+      font-weight: 900;
+      margin: 10px 0;
+    }
+
+    .points-display.plus {
+      color: var(--success);
+    }
+
+    .points-display.minus {
+      color: var(--error);
+    }
+
+    /* ── SCOREBOARD ── */
+    .score-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 10px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .score-item.gold {
+      border-color: #ffd700;
+      background: rgba(255, 215, 0, 0.06);
+    }
+
+    .score-item.silver {
+      border-color: #c0c0c0;
+      background: rgba(192, 192, 192, 0.04);
+    }
+
+    .score-item.bronze {
+      border-color: #cd7f32;
+      background: rgba(205, 127, 50, 0.04);
+    }
+
+    .rank-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+      width: 40px;
+      text-align: center;
+    }
+
+    .score-info {
+      flex: 1;
+    }
+
+    .score-name {
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+
+    .score-members {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .score-pts {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--primary);
+    }
+
+    /* ── WAITING SPINNER ── */
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── NOTIFICATION ── */
+    #notify {
+      position: fixed;
+      top: 14px;
+      left: 50%;
+      z-index: 1000;
+      transform: translateX(-50%) translateY(-80px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      max-width: calc(100vw - 32px);
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    #notify.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── HOST PANEL ── */
+    .host-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(234, 179, 8, 0.1);
+      border: 1px solid rgba(234, 179, 8, 0.3);
+      color: var(--warning);
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .host-controls {
+      background: rgba(99, 102, 241, 0.06);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+
+    /* ── SCREENS ── */
+    .screen {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    /* ── UTILITIES ── */
+    .text-center {
+      text-align: center;
+    }
+
+    .mt-8 {
+      margin-top: 8px;
+    }
+
+    .mt-12 {
+      margin-top: 12px;
+    }
+
+    .mt-16 {
+      margin-top: 16px;
+    }
+
+    .mt-20 {
+      margin-top: 20px;
+    }
+
+    .mb-12 {
+      margin-bottom: 12px;
+    }
+
+    .gap-10 {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 13px;
+    }
+
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* ── HOST QUESTION VIEW ── */
+    .host-q-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    /* ── CAPTAIN SELF BADGE ── */
+    .self-tag {
+      font-size: 10px;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    /* ── BUZZER MODE ── */
+    @keyframes buzzerPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.5);
+      }
+
+      70% {
+        box-shadow: 0 0 0 15px rgba(234, 179, 8, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(234, 179, 8, 0);
+      }
+    }
+
+    .buzzer-banner {
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(249, 115, 22, 0.15));
+      border: 2px solid rgba(234, 179, 8, 0.4);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      animation: buzzerPulse 1.5s infinite;
+      text-align: center;
+    }
+
+    .buzzer-banner .buzzer-title {
+      font-size: 14px;
+      color: var(--warning);
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .buzzer-banner .buzzer-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ── TRUE/FALSE BUTTONS ── */
+    .tf-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .tf-btn {
+      padding: 20px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .tf-btn:hover {
+      transform: scale(1.03);
+    }
+
+    .tf-btn.tf-true {
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+
+    .tf-btn.tf-true:hover {
+      background: rgba(34, 197, 94, 0.15);
+    }
+
+    .tf-btn.tf-false {
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    .tf-btn.tf-false:hover {
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    .tf-btn.selected {
+      opacity: 1 !important;
+      transform: scale(1.05);
+    }
+
+    .tf-btn.correct {
+      background: rgba(34, 197, 94, 0.3) !important;
+      border-color: var(--success) !important;
+    }
+
+    .tf-btn.wrong {
+      background: rgba(239, 68, 68, 0.3) !important;
+      border-color: var(--error) !important;
+    }
+
+    /* ── CHESS BOARD ── */
+    .chess-container {
+      margin-bottom: 18px;
+    }
+
+    .chess-board-wrapper {
+      max-width: 460px;
+      margin: 12px auto;
+    }
+
+    .chess-board-with-coords {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      grid-template-rows: 1fr 24px;
+      gap: 0;
+      align-items: stretch;
+    }
+
+    .chess-rank-labels {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chess-rank-label {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      user-select: none;
+    }
+
+    .chess-file-labels {
+      display: flex;
+      grid-column: 2;
+    }
+
+    .chess-file-label {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      user-select: none;
+    }
+
+    .chess-board {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    .chess-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(26px, 7vw, 40px);
+      user-select: none;
+      position: relative;
+      line-height: 1;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+    }
+
+    .chess-cell.light {
+      background: #f0d9b5;
+    }
+
+    .chess-cell.dark {
+      background: #b58863;
+    }
+
+    .chess-cell::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+      pointer-events: none;
+    }
+
+    .chess-piece {
+      position: relative;
+      z-index: 10;
+    }
+
+    .chess-piece.white-piece {
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 -1px 1px rgba(0,0,0,0.4), 1px 0 2px rgba(0,0,0,0.6), -1px 0 2px rgba(0,0,0,0.6);
+    }
+
+    .chess-piece.black-piece {
+      color: #111;
+      text-shadow: 0 1px 1px rgba(255,255,255,0.8), 0 -1px 1px rgba(255,255,255,0.4), 1px 0 1px rgba(255,255,255,0.6), -1px 0 1px rgba(255,255,255,0.6);
+    }
+
+    .chess-legend {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .chess-fen {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(0, 0, 0, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 8px 10px;
+      overflow-wrap: anywhere;
+    }
+
+    /* ── CHESS OPTIONS ── */
+    .options-list.chess-options .opt-btn {
+      padding: 16px 18px;
+      border-width: 2px;
+    }
+
+    .chess-opt {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .chess-move {
+      font-weight: 900;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chess-hint {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.25;
+    }
+
+    /* ── SPOT DIFF GRIDS ── */
+    .spotdiff-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .spotdiff-panel {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+    }
+
+    .spotdiff-panel .panel-label {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .emoji-grid {
+      display: grid;
+      gap: 2px;
+      justify-items: center;
+      align-items: center;
+    }
+
+    .emoji-grid .emoji-cell {
+      font-size: clamp(16px, 4vw, 24px);
+      padding: 2px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="notify"></div>
+
+  <div class="app">
+    <div class="header">
+      <h1>ClusterQuiz</h1>
+      <div class="sub">Gerçek zamanlı takım quiz oyunu</div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: JOIN                                  -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-join" class="screen active">
+      <!-- Option 1: Oyun Kur (Host) -->
+      <div class="card card-glow">
+        <div class="card-title">👑 Oyun Kur</div>
+        <div class="muted small mb-12">Bir oda oluştur, kodu paylaş.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input type="text" id="hostNameInput" placeholder="Adınızı girin..." maxlength="20" autocomplete="off">
+          <div
+            style="display:flex;align-items:center;gap:10px;justify-content:space-between;background:var(--surface);padding:10px;border-radius:6px;">
+            <span class="muted small" style="font-weight:600;">Soru Sayısı:</span>
+            <select id="hostQuestionCount"
+              style="padding:6px 12px;border-radius:4px;background:var(--bg);color:var(--text);border:1px solid var(--border);outline:none;">
+              <option value="5">5 Soru</option>
+              <option value="10" selected>10 Soru</option>
+              <option value="15">15 Soru</option>
+              <option value="20">20 Soru</option>
+            </select>
+          </div>
+          <button class="btn btn-success btn-full" onclick="createGame()">Oda Kur</button>
+        </div>
+      </div>
+
+      <div class="text-center muted" style="font-size:13px;margin:8px 0;letter-spacing:2px;">— VEYA —</div>
+
+      <!-- Option 2: Oyuna Katıl (Student) -->
+      <div class="card">
+        <div class="card-title">🎮 Oyuna Katıl</div>
+        <div class="muted small mb-12">Oyun kurucusunun paylaştığı 4 haneli kodu girin.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input type="text" id="roomCodeInput" placeholder="Oda Kodu (4 hane)" maxlength="4" autocomplete="off"
+            style="text-align:center;font-size:24px;font-weight:900;letter-spacing:8px;padding:16px;">
+          <input type="text" id="playerNameInput" placeholder="Adınızı girin..." maxlength="20" autocomplete="off">
+          <button class="btn btn-primary btn-full" onclick="joinGame()">Katıl</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: LOBBY                                 -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-lobby" class="screen">
+      <!-- Room Code Display (Host sees this big) -->
+      <!-- Room Code Display (Host sees this big) -->
+      <div id="lobbyCodeDisplay" class="card text-center" style="display:none; position:relative;">
+        <div class="muted small mb-12" style="letter-spacing:2px;">ODA KODU — PAYLAŞ VEYA OKUT</div>
+
+        <div style="display:flex; justify-content:center; align-items:center; gap:30px; flex-wrap:wrap;">
+          <div>
+            <div id="lobbyRoomCode" style="font-size:clamp(48px,12vw,72px);font-weight:900;letter-spacing:12px;
+            background:linear-gradient(135deg,var(--primary),var(--secondary));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+            margin-bottom:8px;line-height:1;">----</div>
+            <div class="muted small">Oyuncular bu kodu girip katılacak</div>
+          </div>
+
+          <div style="background:white; padding:10px; border-radius:12px; display:inline-block;">
+            <div id="lobbyQrCode" style="width:140px; height:140px; display:block;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="lobbyHostBadge" class="text-center mb-12" style="display:none;">
+        <div class="host-badge">👑 Oyun Kurucusu: <span id="lobbyHostName"></span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🎮 Oyuncular (<span id="lobbyCount">0</span>)</div>
+        <div class="chip-list" id="lobbyPlayerList"></div>
+      </div>
+
+      <!-- Host: Soru Ekle Butonu (her zaman görünsün) -->
+      <div id="hostAddQWrap" style="display:none;" class="mb-12">
+        <button class="btn btn-full"
+          style="background:var(--surface);border:1px dashed var(--border);color:var(--muted);font-weight:600;"
+          onclick="showScreen('addquestion')">
+          📝 Özel Soru Ekle
+        </button>
+      </div>
+
+      <!-- Host: Start button -->
+      <div id="hostStartWrap" style="display:none;">
+        <button class="btn btn-success btn-full btn-xl" onclick="startGame()">
+          🚀 Oyunu Başlat
+        </button>
+        <div class="muted small text-center mt-8">En az 2 oyuncu gerekli (host hariç)</div>
+
+
+
+        <div
+          style="margin-top:12px;padding:12px;background:var(--surface);border-radius:10px;border:1px solid var(--border);">
+          <div class="muted small mb-12" style="font-weight:600;">🔄 Kurucuyu Devret</div>
+          <div style="display:flex;gap:8px;">
+            <select id="transferHostSelect"
+              style="flex:1;padding:8px;border-radius:6px;background:var(--bg);color:var(--text);border:1px solid var(--border);outline:none;font-size:13px;">
+              <option value="">Oyuncu seç...</option>
+            </select>
+            <button class="btn btn-primary" onclick="transferHost()" style="white-space:nowrap;">Devret</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Player: Waiting -->
+      <div id="playerWaitLobby" style="display:none;">
+        <div class="card text-center" style="padding:30px 20px;">
+          <div class="spinner"></div>
+          <div style="font-weight:700;font-size:16px;">Oyun kurucusunun oyunu başlatması bekleniyor...</div>
+          <div class="muted small mt-8">Hazır olduğunuzda kurucunuz "Oyunu Başlat" butonuna basacak.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: ADD QUESTION (host only)              -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-addquestion" class="screen">
+      <div class="card">
+        <div class="card-title">📝 Özel Soru Ekle</div>
+        <div class="muted small mb-12">Herhangi bir formatta soru ekleyin. Eklenen sorular oyuna dahil edilir.</div>
+
+        <!-- Soru Tipi Seçimi -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="btn btn-primary" id="aqTypeMulti" onclick="setAqType('multi')"
+            style="font-size:12px;padding:6px 12px;">📋 4 Şıklı</button>
+          <button class="btn" id="aqTypeTf" onclick="setAqType('truefalse')"
+            style="font-size:12px;padding:6px 12px;background:var(--surface);color:var(--text);">✅ D/Y</button>
+          <button class="btn" id="aqTypeChess" onclick="setAqType('chess')"
+            style="font-size:12px;padding:6px 12px;background:var(--surface);color:var(--text);">♟️ Satranç</button>
+          <button class="btn" id="aqTypeSpot" onclick="setAqType('spotdiff')"
+            style="font-size:12px;padding:6px 12px;background:var(--surface);color:var(--text);">🔍 Fark Bul</button>
+        </div>
+
+        <!-- Kategori + Zorluk -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <input type="text" id="aqCategory" placeholder="Kategori (ör: Bulut Bilişim)" style="font-size:13px;">
+          <select id="aqDifficulty"
+            style="padding:10px;border-radius:10px;background:var(--surface);color:var(--text);border:2px solid var(--border);font-size:13px;">
+            <option value="Kolay">Kolay</option>
+            <option value="Orta" selected>Orta</option>
+            <option value="Orta Üstü">Orta Üstü</option>
+            <option value="Zor">Zor</option>
+          </select>
+        </div>
+
+        <!-- Soru Metni -->
+        <textarea id="aqQuestion" placeholder="Soruyu yazın..." rows="3"
+          style="width:100%;padding:12px;border-radius:10px;background:var(--surface);color:var(--text);border:2px solid var(--border);font-size:14px;font-family:inherit;resize:vertical;margin-bottom:10px;"></textarea>
+
+        <!-- Dinamik Alanlar -->
+        <div id="aqDynamic"></div>
+
+        <!-- Doğru Cevap -->
+        <div style="margin-bottom:10px;">
+          <label class="muted small" style="display:block;margin-bottom:4px;font-weight:600;">Doğru Cevap Indexi (0'dan
+            başlar):</label>
+          <select id="aqAnswer"
+            style="width:100%;padding:10px;border-radius:10px;background:var(--surface);color:var(--text);border:2px solid var(--border);font-size:13px;">
+            <option value="0">0 (İlk şık)</option>
+            <option value="1">1 (İkinci şık)</option>
+            <option value="2">2 (Üçüncü şık)</option>
+            <option value="3">3 (Dördüncü şık)</option>
+          </select>
+        </div>
+
+        <!-- Düzenleme modu bilgisi -->
+        <div id="editModeBar"
+          style="display:none;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12px;color:var(--primary);font-weight:600;">✏️ Düzenleme Modu — Soru #<span
+                id="editModeIndex"></span></span>
+            <button onclick="cancelEdit()"
+              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;">✖ İptal</button>
+          </div>
+        </div>
+
+        <!-- Kaydet -->
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-success btn-full" onclick="submitNewQuestion()">💾 Soruyu Ekle</button>
+          <button class="btn btn-full" style="background:var(--surface);color:var(--muted);"
+            onclick="cancelEdit(); showScreen('lobby')">← Geri</button>
+        </div>
+
+        <!-- Eklenen sorular bilgisi -->
+        <div id="aqFeedback" class="mt-12" style="display:none;"></div>
+      </div>
+
+      <!-- JSON Soru Arşivi Yükleme -->
+      <div class="card mb-12">
+        <div class="card-title" style="margin-bottom:8px;font-size:13px;">📦 Soru Dosyası Yükle (JSON)</div>
+        <div class="muted small mb-12" style="font-size:11px;">Hazır soru seti (.json) yükleyerek soru havuzunu tek
+          tuşla doldurabilirsiniz.</div>
+        <div style="display:flex;gap:8px;">
+          <input type="file" id="questionFileInput" accept=".json" class="form-control"
+            style="font-size:12px;padding:4px;flex:1;">
+          <button class="btn btn-primary" style="padding:6px 12px;font-size:12px;" onclick="uploadQuestionFile()">📥
+            Yükle</button>
+        </div>
+      </div>
+
+      <!-- Soru Havuzu Görüntüle -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div class="card-title" style="margin:0;">📋 Soru Havuzu</div>
+          <button class="btn btn-primary" style="font-size:11px;padding:5px 12px;" onclick="loadQuestionsList()">🔄
+            Yenile</button>
+        </div>
+
+        <!-- Filtre -->
+        <div style="display:flex;gap:6px;margin-bottom:12px;">
+          <input type="text" id="qListSearch" placeholder="Havuzda ara..." oninput="filterQuestionsList()"
+            style="flex:1;padding:6px 10px;border-radius:6px;background:var(--surface);color:var(--text);border:1px solid var(--border);font-size:12px;">
+          <select id="qListFilter" onchange="filterQuestionsList()"
+            style="padding:6px;border-radius:6px;background:var(--surface);color:var(--text);border:1px solid var(--border);font-size:11px;">
+            <option value="">Tümü</option>
+            <option value="multi">4 Şıklı</option>
+            <option value="truefalse">D/Y</option>
+            <option value="chess">Satranç</option>
+            <option value="spotdiff">Fark Bul</option>
+          </select>
+        </div>
+
+        <div id="qListCount" class="muted small mb-12"></div>
+        <div id="qListSelectedCount" class="mb-12"
+          style="font-weight:600; color:var(--primary); font-size:13px; display:none;"></div>
+        <div id="qListContainer" style="max-height:350px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: TEAMS (after formation)               -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-teams" class="screen">
+      <div class="card">
+        <div class="card-title">🏆 Takımlar Oluşturuldu!</div>
+        <div id="teamsInfo" class="muted small mb-12"></div>
+        <div class="teams-grid" id="teamsGridView"></div>
+      </div>
+
+      <!-- Host: Takım Yönetimi + Soru Başlat -->
+      <div id="hostBeginWrap" style="display:none;">
+
+        <!-- Takım Modu Değiştirme -->
+        <div class="card" style="padding:14px;">
+          <div class="card-title">🔄 Takım Düzenle</div>
+          <div class="muted small mb-12" style="font-size:11px;">💡 Oyuncuları takımlar arasında taşımak için <b>takım
+              kartına bırakın</b>. (Dolu takımlardaki oyuncuları <b>takas etmek için</b> isimleri direkt birbirinin
+            üzerine sürükleyerek yer değiştirebilirsiniz)</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:stretch;">
+            <select id="teamFormatSelect" style="flex:1;padding:6px 10px;border-radius:6px;background:var(--surface);color:var(--text);border:1px solid var(--border);font-size:12px;outline:none;cursor:pointer;">
+              <option value="solo">👤 Herkes Solo (Bireysel)</option>
+              <option value="pairs">👤👤 İkili Takımlar</option>
+              <option value="trio">👤👤👤 Üçlü Takımlar</option>
+              <option value="quad">👤👤👤👤 Dörtlü Takımlar</option>
+            </select>
+            <button class="btn btn-primary" style="font-size:12px;padding:6px 16px;" onclick="reformTeams(document.getElementById('teamFormatSelect').value)">
+              ⚡ Dağıt
+            </button>
+            <button id="btnFreeMode" class="btn"
+              style="font-size:12px;padding:6px 12px;background:rgba(34,197,94,0.15);color:var(--success);border:1px solid rgba(34,197,94,0.3);"
+              onclick="createEmptyTeam()">➕ Boş Takım Ekle</button>
+          </div>
+
+          <div class="muted small mb-12" style="font-size:11px;">💡 Çoklu Taşıma: İsteğe bağlı olarak birden fazla oyuncuyu seçip tek seferde bir takıma aktarabilirsiniz:</div>
+          <div id="bulkPlayerSelect" class="chip-list" style="margin-bottom:10px; background:var(--bg); padding:10px; border-radius:8px; max-height:150px; overflow-y:auto;">
+             <!-- Oyuncular buraya eklenecek -->
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+            <select id="manualTeamSelect" style="flex:1;padding:6px;border-radius:6px;background:var(--surface);color:var(--text);border:1px solid var(--border);font-size:12px;">
+              <option value="">Hedef Takım Seç...</option>
+            </select>
+            <button class="btn btn-primary" style="font-size:12px;padding:6px 12px;" onclick="bulkMovePlayers()">Seçilileri Taşı</button>
+          </div>
+        </div>
+
+        <div class="muted small text-center mb-12">
+          💡 Kaptanları değiştirmek için takım üyelerine tıklayın
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn" style="flex:1; background:var(--surface); color:var(--text); border:1px solid var(--border);" onclick="backToLobby()">
+            🔙 Lobiye Dön
+          </button>
+          <button class="btn btn-primary btn-xl" style="flex:2;" onclick="sendQuestion()">
+            🎯 İlk Soruyu Gönder
+          </button>
+        </div>
+      </div>
+
+      <!-- Player: Waiting -->
+      <div id="playerWaitTeams" style="display:none;">
+        <div class="card text-center" style="padding:24px;">
+          <div class="spinner"></div>
+          <div style="font-weight:600;">Oyun kurucusu soruları göndermeye başlayacak...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: HOST DASHBOARD (during gameplay)      -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-host" class="screen">
+      <div class="host-controls">
+        <div class="flex-between mb-12">
+          <div class="host-badge">👑 Kontrol Paneli</div>
+          <div class="muted small"><span id="hostProgress">0</span>/<span id="hostTotal">0</span> <span id="hostProgressLabel">takım cevapladı</span></div>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="hostProgressBar" style="width:0%"></div>
+        </div>
+        <div id="hostStatusText" class="text-center mt-12" style="font-weight:600;font-size:15px;">
+          Soru göndermeye hazır
+        </div>
+        <div id="hostQuestionInfo" class="host-q-box" style="display:none; padding:0; background:transparent; border:none;">
+          <div style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:12px; border:1px solid var(--border);">
+            <div class="muted small mb-12">Bu turun sorusu:</div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="muted small" style="min-width:45px;">Konu:</span>
+                <span id="hostCatBadge" class="cat-badge" style="margin:0;">—</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="muted small" style="min-width:45px;">Zorluk:</span>
+                <span id="hostDiffBadge" class="diff-badge" style="margin:0;">—</span>
+              </div>
+            </div>
+            <div class="muted small mt-8">⏱ Süre: <strong id="hostTimer">—</strong> saniye</div>
+          </div>
+          <div id="hostQuestionText" style="font-weight:600;font-size:14px;line-height:1.5;"></div>
+          <div id="hostAnsweringName" class="muted small mt-8"></div>
+        </div>
+        <button class="btn btn-primary btn-full btn-lg mt-16" id="hostSendBtn" onclick="sendQuestion()">
+          📡 Sonraki Soruyu Gönder
+        </button>
+        <button class="btn btn-danger btn-full mt-8" onclick="endGame()">🏁 Oyunu Bitir</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📊 Puan Durumu</div>
+        <div class="teams-grid" id="hostTeamsGrid"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: CAPTAIN PICK                          -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-captain" class="screen">
+      <div class="card card-glow">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <div style="font-size:36px;">👑</div>
+          <div>
+            <div
+              style="font-size:10px;color:var(--warning);letter-spacing:2px;font-weight:800;text-transform:uppercase;">
+              Sen Kaptansın!</div>
+            <div style="font-size:17px;font-weight:800;">Soruyu kime yönlendiriyorsun?</div>
+          </div>
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:18px;">
+          <div class="muted small mb-12">Bu turun sorusu:</div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="muted small" style="min-width:45px;">Konu:</span>
+              <span id="captCatBadge" class="cat-badge" style="margin:0;">—</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="muted small" style="min-width:45px;">Zorluk:</span>
+              <span id="captDiffBadge" class="diff-badge" style="margin:0;">—</span>
+            </div>
+          </div>
+          <div class="muted small mt-8">⏱ Süre: <strong id="captTimerInfo">—</strong> saniye</div>
+        </div>
+        <div class="card-title">Henüz cevaplamamış üyeler:</div>
+        <div class="pick-list" id="captainPickList"></div>
+      </div>
+    </div>
+    
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: GET READY (Solo Mode Wait)            -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-getready" class="screen">
+      <div class="card text-center" style="padding:30px 20px;">
+        <div class="spinner"></div>
+        <div style="font-size:20px;font-weight:bold;margin:16px 0 8px;">Hazırlan!</div>
+        <div class="muted mb-16">
+          Sıradaki soru birazdan ekrana gelecek...
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:14px;margin-top:16px; border:1px solid var(--border); text-align:left;">
+          <div class="muted small mb-12">Bu turun sorusu:</div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="muted small" style="min-width:45px;">Konu:</span>
+              <span id="grCatBadge" class="cat-badge" style="margin:0;">—</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="muted small" style="min-width:45px;">Zorluk:</span>
+              <span id="grDiffBadge" class="diff-badge" style="margin:0;">—</span>
+            </div>
+          </div>
+          <div class="muted small mt-8">⏱ Süre: <strong id="grTimer">—</strong> saniye</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: QUESTION (answering player)           -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-question" class="screen">
+      <div class="card">
+        <div style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:18px; border:1px solid var(--border);">
+          <div class="muted small mb-12">Bu turun sorusu:</div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="muted small" style="min-width:45px;">Konu:</span>
+              <span id="qCatBadge" class="cat-badge" style="margin:0;">—</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="muted small" style="min-width:45px;">Zorluk:</span>
+              <span id="qDiffBadge" class="diff-badge" style="margin:0;">—</span>
+            </div>
+          </div>
+          <div class="muted small mt-8">⏱ Süre: <strong id="qTimer">—</strong> saniye</div>
+        </div>
+        <div id="qModeBanner">
+          <div
+            style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:12px 14px;margin-bottom:18px;">
+            <div style="font-size:11px;color:var(--primary);font-weight:700;" id="qBannerTitle">⚡ SORU SİZE
+              YÖNLENDİRİLDİ</div>
+            <div class="muted small" id="qBannerSub">Doğru cevabı süre dolmadan seçin!</div>
+          </div>
+        </div>
+        <div id="questionText"
+          style="font-size:clamp(16px,4vw,22px);font-weight:700;line-height:1.4;margin-bottom:20px;">
+          Soru yükleniyor...
+        </div>
+        <div class="options-list" id="optionsGrid"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: WAITING (non-answering players)       -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-waiting" class="screen">
+      <div class="card text-center" style="padding:30px 20px;">
+        <div class="spinner"></div>
+        <div style="font-size:17px;font-weight:800;margin-bottom:6px;">
+          <span id="waitPlayerName">—</span> cevaplıyor...
+        </div>
+        <div class="muted small mb-12" id="waitInfo">Kaptan soruyu ona yönlendirdi.</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+          <span id="waitCatBadge" class="cat-badge">—</span>
+          <span id="waitDiffBadge" class="diff-badge">—</span>
+        </div>
+        <div class="timer-circle mt-16" id="waitTimer"
+          style="width:56px;height:56px;font-size:20px;margin:16px auto 0;">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Puan Durumu</div>
+        <div class="teams-grid" id="waitTeamsGrid"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: WAITING FOR CAPTAIN                   -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-waitcaptain" class="screen">
+      <div class="card text-center" style="padding:30px 20px;">
+        <div class="spinner"></div>
+        <div style="font-size:17px;font-weight:800;margin-bottom:6px;">
+          Kaptan <span id="wcCaptainName">—</span> seçim yapıyor...
+        </div>
+        <div class="muted small mb-12">Soruyu kime yönlendireceğine karar veriyor.</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+          <span id="wcCatBadge" class="cat-badge">—</span>
+          <span id="wcDiffBadge" class="diff-badge">—</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Puan Durumu</div>
+        <div class="teams-grid" id="wcTeamsGrid"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: RESULT                                -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-result" class="screen">
+      <div class="card">
+        <div class="result-icon" id="resIcon">🎉</div>
+        <div class="result-title" id="resTitle" style="font-size: 26px;">Tur Sonu</div>
+
+        <!-- Sadece oyuncuysa kendi sonucunu öne çıkar -->
+        <div id="resMyTeamBox"
+          style="display:none; align-items:center; justify-content:center; gap:8px; margin-bottom:12px;">
+          <span id="resMyIcon">✅</span>
+          <span id="resMyPoints" style="font-weight:bold;">+10</span>
+        </div>
+
+        <div style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:16px;">
+          <div class="muted small mb-12">Doğru cevap:</div>
+          <div style="font-weight:700;color:var(--success);" id="resCorrectText">—</div>
+        </div>
+
+        <div class="card-title text-left">📊 Tur Performansı</div>
+        <div class="teams-grid" id="resRoundGrid" style="margin-bottom: 24px; gap:8px;"></div>
+
+        <div class="card-title text-left">🏆 Güncel Skorlar</div>
+        <div id="resScoreList"></div>
+      </div>
+
+      <!-- Host: next/end buttons -->
+      <div id="resHostBtns" style="display:none;" class="mt-12 gap-10">
+        <button class="btn btn-primary btn-full btn-lg" id="btnNextQuestion" onclick="sendQuestion()">Sonraki Soru
+          ➡️</button>
+        <button class="btn btn-danger btn-full" onclick="endGame()">🏁 Oyunu Bitir</button>
+      </div>
+      <div id="resPlayerWait" style="display:none;" class="mt-12">
+        <div class="card text-center" style="padding:16px;">
+          <div class="muted small">Kurucunun sonraki soruyu göndermesi bekleniyor...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SCREEN: SCOREBOARD (game over)                -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div id="screen-scoreboard" class="screen">
+      <div class="card">
+        <div class="text-center" style="padding:20px 0;">
+          <div style="font-size:52px;margin-bottom:10px;">🏆</div>
+          <div style="font-size:26px;font-weight:900;margin-bottom:4px;">Oyun Bitti!</div>
+          <div class="muted small">Final sonuçları</div>
+        </div>
+        <div id="finalScoreList"></div>
+      </div>
+      <div id="sbHostBtns" style="display:none;" class="mt-12">
+        <button class="btn btn-primary btn-full btn-lg" onclick="restartGame()">🔄 Yeni Oyun</button>
+      </div>
+    </div>
+
+  </div><!-- /app -->
+
+  <script>
+    const socket = io();
+    let myName = null;
+    let mySocketId = null;
+    let isHost = false;
+    let currentScreen = 'join';
+    let lastState = {};
+
+    const TEAM_COLORS = ['#6366f1', '#f43f5e', '#22c55e', '#eab308', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#64748b'];
+
+    // ─── SCREEN MANAGEMENT ──────────────────────────────────────────────
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const el = document.getElementById('screen-' + id);
+      if (el) { el.classList.add('active'); currentScreen = id; }
+    }
+
+    // ─── NOTIFICATION ────────────────────────────────────────────────────
+    function notify(msg, dur = 2500) {
+      const n = document.getElementById('notify');
+      n.textContent = msg;
+      n.classList.add('show');
+      setTimeout(() => n.classList.remove('show'), dur);
+    }
+
+    // ─── ACTIONS ─────────────────────────────────────────────────────────
+    function createGame() {
+      const name = document.getElementById('hostNameInput').value.trim();
+      const rawQc = document.getElementById('hostQuestionCount');
+      const qc = rawQc ? parseInt(rawQc.value) || 10 : 10;
+      if (!name) { notify('❗ Lütfen adınızı girin!'); return; }
+      socket.emit('createGame', { name, questionCount: qc });
+    }
+    function joinGame() {
+      const code = document.getElementById('roomCodeInput').value.trim();
+      const name = document.getElementById('playerNameInput').value.trim();
+      if (!code || code.length !== 4) { notify('❗ 4 haneli oda kodunu girin!'); return; }
+      if (!name) { notify('❗ Lütfen adınızı girin!'); return; }
+      socket.emit('joinGame', { name, roomCode: code });
+    }
+    function startGame() { socket.emit('startGame'); }
+    function sendQuestion() { socket.emit('sendQuestion'); }
+    function endGame() { socket.emit('endGame'); }
+    function restartGame() { socket.emit('restartGame'); }
+    function transferHost() {
+      const sel = document.getElementById('transferHostSelect');
+      if (!sel || !sel.value) { notify('❗ Devredilecek oyuncuyu seçin!'); return; }
+      socket.emit('transferHost', { targetId: sel.value });
+    }
+
+    // ─── SORU EKLEME SİSTEMİ ─────────────────────────────────────────────
+    let currentAqType = 'multi';
+    let addedCount = 0;
+
+    function setAqType(type) {
+      currentAqType = type;
+      // Buton stillerini güncelle
+      ['Multi', 'Tf', 'Chess', 'Spot'].forEach(id => {
+        const btn = document.getElementById('aqType' + id);
+        if (btn) { btn.className = 'btn'; btn.style.cssText = 'font-size:12px;padding:6px 12px;background:var(--surface);color:var(--text);'; }
+      });
+      const activeMap = { multi: 'Multi', truefalse: 'Tf', chess: 'Chess', spotdiff: 'Spot' };
+      const activeBtn = document.getElementById('aqType' + activeMap[type]);
+      if (activeBtn) { activeBtn.className = 'btn btn-primary'; activeBtn.style.cssText = 'font-size:12px;padding:6px 12px;'; }
+
+      // Cevap dropdown'ını güncelle
+      const aqAnswer = document.getElementById('aqAnswer');
+      if (type === 'truefalse') {
+        aqAnswer.innerHTML = '<option value="0">0 (Doğru)</option><option value="1">1 (Yanlış)</option>';
+      } else {
+        aqAnswer.innerHTML = '<option value="0">0 (İlk şık)</option><option value="1">1 (İkinci şık)</option><option value="2">2 (Üçüncü şık)</option><option value="3">3 (Dördüncü şık)</option>';
+      }
+
+      // Dinamik alanları güncelle
+      const dyn = document.getElementById('aqDynamic');
+      const inputStyle = 'width:100%;padding:10px;border-radius:8px;background:var(--surface);color:var(--text);border:2px solid var(--border);font-size:13px;margin-bottom:6px;';
+
+      if (type === 'multi' || type === 'chess') {
+        dyn.innerHTML = `
+      <div class="muted small mb-12" style="font-weight:600;">Şıklar (4 adet):</div>
+      <input type="text" id="aqOpt0" placeholder="Şık A" style="${inputStyle}">
+      <input type="text" id="aqOpt1" placeholder="Şık B" style="${inputStyle}">
+      <input type="text" id="aqOpt2" placeholder="Şık C" style="${inputStyle}">
+      <input type="text" id="aqOpt3" placeholder="Şık D" style="${inputStyle}">
+      ${type === 'chess' ? `<div class="muted small mb-12 mt-8" style="font-weight:600;">♟️ FEN Notasyonu:</div>
+      <input type="text" id="aqFen" placeholder="ör: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR" style="${inputStyle}">
+      <div class="muted small" style="font-size:11px;">lichess.org'dan pozisyon FEN kodunu kopyalayın.</div>` : ''}
+    `;
+      } else if (type === 'truefalse') {
+        dyn.innerHTML = `
+      <div class="muted small mb-12" style="font-weight:600;">Şıklar otomatik: Doğru / Yanlış</div>
+    `;
+      } else if (type === 'spotdiff') {
+        dyn.innerHTML = `
+      <div class="muted small mb-12" style="font-weight:600;">Şıklar (4 adet):</div>
+      <input type="text" id="aqOpt0" placeholder="Şık A (ör: Satır 2 Sütun 3)" style="${inputStyle}">
+      <input type="text" id="aqOpt1" placeholder="Şık B" style="${inputStyle}">
+      <input type="text" id="aqOpt2" placeholder="Şık C" style="${inputStyle}">
+      <input type="text" id="aqOpt3" placeholder="Şık D" style="${inputStyle}">
+      <div class="muted small mb-12 mt-8" style="font-weight:600;">🔍 Emoji Gridleri (virgülle ayırın):</div>
+      <input type="text" id="aqGrid1" placeholder="Orijinal: 🍎,🍊,🍋,🍇,🍉,🍓,🍑,🍒,🫐" style="${inputStyle}">
+      <input type="text" id="aqGrid2" placeholder="Değişmiş: 🍎,🍊,🍋,🍇,🍉,🍓,🍑,🍌,🫐" style="${inputStyle}">
+    `;
+      }
+    }
+
+    function submitNewQuestion() {
+      const category = document.getElementById('aqCategory')?.value?.trim();
+      const difficulty = document.getElementById('aqDifficulty')?.value;
+      const question = document.getElementById('aqQuestion')?.value?.trim();
+      const answer = parseInt(document.getElementById('aqAnswer')?.value || '0');
+
+      if (!category) { notify('❗ Kategori girin!'); return; }
+      if (!question) { notify('❗ Soru metnini girin!'); return; }
+
+      let options = [];
+      if (currentAqType === 'truefalse') {
+        options = ['Doğru', 'Yanlış'];
+      } else {
+        for (let i = 0; i < 4; i++) {
+          const v = document.getElementById('aqOpt' + i)?.value?.trim();
+          if (!v) { notify(`❗ Şık ${String.fromCharCode(65 + i)} boş olamaz!`); return; }
+          options.push(v);
+        }
+      }
+
+      const data = { category, difficulty, question, options, answer, type: currentAqType };
+
+      if (currentAqType === 'chess') {
+        const fen = document.getElementById('aqFen')?.value?.trim();
+        if (!fen) { notify('❗ FEN notasyonu girin!'); return; }
+        data.fen = fen;
+      }
+
+      if (currentAqType === 'spotdiff') {
+        const g1 = document.getElementById('aqGrid1')?.value?.trim();
+        const g2 = document.getElementById('aqGrid2')?.value?.trim();
+        if (!g1 || !g2) { notify('❗ Her iki emoji gridini girin!'); return; }
+        data.grid1 = g1.split(',').map(s => s.trim());
+        data.grid2 = g2.split(',').map(s => s.trim());
+      }
+
+      socket.emit('addQuestion', data);
+    }
+
+    socket.on('questionAdded', ({ total, question }) => {
+      addedCount++;
+      notify(`✅ Soru eklendi! (Toplam: ${total})`, 3000);
+      const fb = document.getElementById('aqFeedback');
+      fb.style.display = 'block';
+      fb.innerHTML = `<div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:10px;color:var(--success);font-size:13px;">
+    ✅ ${addedCount} soru eklendi! Son: "${question}..."
+  </div>`;
+      // Formu temizle
+      document.getElementById('aqQuestion').value = '';
+      ['aqOpt0', 'aqOpt1', 'aqOpt2', 'aqOpt3', 'aqFen', 'aqGrid1', 'aqGrid2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    });
+
+    // İlk açılışta dinamik alanları yükle
+    setTimeout(() => { setAqType('multi'); }, 100);
+
+    // ─── SORU HAVUZU GÖRÜNTÜLEME + SİLME ────────────────────────────────
+    let cachedQuestions = [];
+    let selectedQuestionIndices = [];
+
+    function loadQuestionsList() {
+      socket.emit('getQuestions');
+      notify('📋 Soru havuzu yükleniyor...');
+    }
+
+    socket.on('questionsList', (list) => {
+      cachedQuestions = list;
+      renderQuestionsList(list);
+    });
+
+    socket.on('questionDeleted', ({ total }) => {
+      notify(`🗑️ Soru silindi! Kalan: ${total}`, 3000);
+    });
+
+    function filterQuestionsList() {
+      const search = (document.getElementById('qListSearch')?.value || '').toLowerCase();
+      const typeFilter = document.getElementById('qListFilter')?.value || '';
+
+      let filtered = cachedQuestions;
+      if (search) filtered = filtered.filter(q => q.question.toLowerCase().includes(search) || q.category.toLowerCase().includes(search));
+      if (typeFilter) filtered = filtered.filter(q => q.type === typeFilter);
+      renderQuestionsList(filtered);
+    }
+
+    function renderQuestionsList(list) {
+      const container = document.getElementById('qListContainer');
+      const countEl = document.getElementById('qListCount');
+      if (!container) return;
+
+      countEl.textContent = `${list.length} soru gösteriliyor (toplam: ${cachedQuestions.length})`;
+
+      const selCount = document.getElementById('qListSelectedCount');
+      if (selectedQuestionIndices.length > 0) {
+        selCount.style.display = 'block';
+        selCount.textContent = `📌 ${selectedQuestionIndices.length} özel soru seçildi (Oyun oluşturduğunuz soru sayısını yoksayar)`;
+      } else {
+        selCount.style.display = 'none';
+      }
+
+      if (list.length === 0) {
+        container.innerHTML = '<div class="muted small text-center" style="padding:20px;">Soru bulunamadı. "🔄 Yükle" butonuna basın.</div>';
+        return;
+      }
+
+      const typeIcons = { multi: '📋', truefalse: '✅', chess: '♟️', spotdiff: '🔍' };
+      const diffColors = { Kolay: '#22c55e', Orta: '#f59e0b', 'Orta Üstü': '#f97316', Zor: '#ef4444' };
+
+      container.innerHTML = list.map(q => {
+        const isChecked = selectedQuestionIndices.includes(q.index);
+        return `
+    <div style="display:flex;align-items:center;gap:6px;padding:8px;background:var(--surface);border-radius:8px;margin-bottom:4px;border:1px solid ${isChecked ? 'var(--primary)' : 'var(--border)'};">
+      <input type="checkbox" style="width:18px;height:18px;cursor:pointer;" ${isChecked ? 'checked' : ''} onchange="toggleQuestionSelection(${q.index}, this.checked)">
+      <div style="font-size:16px;margin-left:4px;">${typeIcons[q.type] || '📋'}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${q.question}</div>
+        <div style="display:flex;gap:6px;margin-top:2px;">
+          <span style="font-size:10px;color:var(--muted);">${q.category}</span>
+          <span style="font-size:10px;color:${diffColors[q.difficulty] || 'var(--muted)'};">${q.difficulty}</span>
+        </div>
+      </div>
+      <button onclick="editQuestion(${q.index})" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:var(--primary);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;">✏️</button>
+      <button onclick="deleteQuestion(${q.index})" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;">🗑️</button>
+    </div>
+  `}).join('');
+    }
+
+    function toggleQuestionSelection(index, isChecked) {
+      if (isChecked) {
+        if (!selectedQuestionIndices.includes(index)) selectedQuestionIndices.push(index);
+      } else {
+        selectedQuestionIndices = selectedQuestionIndices.filter(i => i !== index);
+      }
+      socket.emit('setGameQuestions', selectedQuestionIndices);
+      // Sadece sayacı güncelle, tüm listeyi yeniden oluşturma
+      const selCount = document.getElementById('qListSelectedCount');
+      if (selectedQuestionIndices.length > 0) {
+        selCount.style.display = 'block';
+        selCount.textContent = `📌 ${selectedQuestionIndices.length} soru seçildi (Oyun oluşturulurken seçilen sayıyı yoksayar)`;
+      } else {
+        selCount.style.display = 'none';
+      }
+      // Renk belirtmek için listeyi re-renderlayalım
+      filterQuestionsList();
+    }
+
+    function deleteQuestion(index) {
+      if (confirm('Bu soruyu silmek istediğinize emin misiniz?')) {
+        socket.emit('deleteQuestion', { index });
+      }
+    }
+
+    // ─── SORU DÜZENLEME ──────────────────────────────────────────────────
+    let editingIndex = -1; // -1 = yeni soru modu, >= 0 = düzenleme modu
+
+    function editQuestion(index) {
+      socket.emit('getQuestionFull', { index });
+      notify('✏️ Soru yükleniyor...');
+    }
+
+    socket.on('questionFull', (q) => {
+      editingIndex = q.index;
+
+      // Tip seç ve formu doldur
+      setAqType(q.type || 'multi');
+      document.getElementById('aqCategory').value = q.category || '';
+      document.getElementById('aqDifficulty').value = q.difficulty || 'Orta';
+      document.getElementById('aqQuestion').value = q.question || '';
+      document.getElementById('aqAnswer').value = String(q.answer || 0);
+
+      // Şıkları doldur
+      if (q.type !== 'truefalse' && q.options) {
+        q.options.forEach((opt, i) => {
+          const el = document.getElementById('aqOpt' + i);
+          if (el) el.value = opt;
+        });
+      }
+
+      // Chess FEN
+      if (q.type === 'chess' && q.fen) {
+        const fenEl = document.getElementById('aqFen');
+        if (fenEl) fenEl.value = q.fen;
+      }
+
+      // Spotdiff grids
+      if (q.type === 'spotdiff') {
+        const g1 = document.getElementById('aqGrid1');
+        const g2 = document.getElementById('aqGrid2');
+        if (g1 && q.grid1) g1.value = q.grid1.join(',');
+        if (g2 && q.grid2) g2.value = q.grid2.join(',');
+      }
+
+      // Butonu "Güncelle" olarak değiştir
+      updateSubmitButton();
+
+      // Sayfayı yukarı kaydır
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      notify('✏️ Soru foruma yüklendi — düzenleyin ve kaydedin.');
+    });
+
+    function updateSubmitButton() {
+      const btn = document.querySelector('#screen-addquestion .btn-success');
+      const editBar = document.getElementById('editModeBar');
+      const editIndex = document.getElementById('editModeIndex');
+
+      if (!btn) return;
+      if (editingIndex >= 0) {
+        btn.innerHTML = '✏️ Soruyu Güncelle';
+        btn.onclick = submitEditedQuestion;
+        if (editBar) editBar.style.display = 'block';
+        if (editIndex) editIndex.textContent = editingIndex;
+      } else {
+        btn.innerHTML = '💾 Soruyu Ekle';
+        btn.onclick = submitNewQuestion;
+        if (editBar) editBar.style.display = 'none';
+      }
+    }
+
+    function cancelEdit() {
+      editingIndex = -1;
+      updateSubmitButton();
+      // Formu temizle
+      document.getElementById('aqQuestion').value = '';
+      document.getElementById('aqCategory').value = '';
+      ['aqOpt0', 'aqOpt1', 'aqOpt2', 'aqOpt3', 'aqFen', 'aqGrid1', 'aqGrid2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      notify('İptal edildi.');
+    }
+
+    function submitEditedQuestion() {
+      const category = document.getElementById('aqCategory')?.value?.trim();
+      const difficulty = document.getElementById('aqDifficulty')?.value;
+      const question = document.getElementById('aqQuestion')?.value?.trim();
+      const answer = parseInt(document.getElementById('aqAnswer')?.value || '0');
+
+      if (!category || !question) { notify('❗ Kategori ve soru girin!'); return; }
+
+      let options = [];
+      if (currentAqType === 'truefalse') {
+        options = ['Doğru', 'Yanlış'];
+      } else {
+        for (let i = 0; i < 4; i++) {
+          const v = document.getElementById('aqOpt' + i)?.value?.trim();
+          if (!v) { notify(`❗ Şık ${String.fromCharCode(65 + i)} boş olamaz!`); return; }
+          options.push(v);
+        }
+      }
+
+      const data = { category, difficulty, question, options, answer, type: currentAqType };
+      if (currentAqType === 'chess') {
+        const fen = document.getElementById('aqFen')?.value?.trim();
+        if (fen) data.fen = fen;
+      }
+      if (currentAqType === 'spotdiff') {
+        const g1 = document.getElementById('aqGrid1')?.value?.trim();
+        const g2 = document.getElementById('aqGrid2')?.value?.trim();
+        if (g1 && g2) { data.grid1 = g1.split(',').map(s => s.trim()); data.grid2 = g2.split(',').map(s => s.trim()); }
+      }
+
+      socket.emit('updateQuestion', { index: editingIndex, data });
+    }
+
+    socket.on('questionUpdated', ({ index, question }) => {
+      notify(`✏️ Soru güncellendi! [#${index}]`, 3000);
+      editingIndex = -1;
+      updateSubmitButton();
+      // Formu temizle
+      document.getElementById('aqQuestion').value = '';
+      ['aqOpt0', 'aqOpt1', 'aqOpt2', 'aqOpt3', 'aqFen', 'aqGrid1', 'aqGrid2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    });
+
+    // ─── TAKIM YÖNETİMİ ─────────────────────────────────────────────────
+    function reformTeams(mode) {
+      socket.emit('reformTeams', { mode });
+      const labels = { solo: 'Solo', pairs: 'İkili', trio: 'Üçlü' };
+      notify(`🔄 Takımlar yeniden oluşturuldu: ${labels[mode]} mod`);
+    }
+
+    function backToLobby() {
+      socket.emit('backToLobby');
+      notify('🔙 Lobiye dönülüyor...');
+    }
+
+    function createEmptyTeam() {
+      socket.emit('createTeam');
+      notify(`➕ Serbest mod aktif, yeni takım oluşturuldu.`);
+    }
+
+    function deleteTeam(teamId) {
+      if (confirm(`${teamId} takımını silmek istiyor musunuz?`)) {
+        socket.emit('deleteTeam', { teamId });
+      }
+    }
+
+    function manualMovePlayer() {
+      const pSel = document.getElementById('manualPlayerSelect');
+      const tSel = document.getElementById('manualTeamSelect');
+      if (!pSel.value || !tSel.value) {
+        notify('Lütfen oyuncu ve hedef takım seçin!', 3000);
+        return;
+      }
+      socket.emit('movePlayer', { playerId: pSel.value, toTeamId: tSel.value });
+      pSel.value = '';
+      tSel.value = '';
+    }
+
+    // ─── DRAG AND DROP OYUNCU TAŞIMA ──────────────────────────────────
+    let draggedPlayer = null;
+
+    function dragPlayer(ev, fromTeamId, playerId) {
+      draggedPlayer = { playerId, fromTeamId };
+      // Sürüklenen elementin yarı saydam görünmesini sağla
+      ev.target.style.opacity = '0.5';
+    }
+
+    // Sürükleme bittiğinde opacity'i geri al (başarılı veya başarısız)
+    document.addEventListener('dragend', (ev) => {
+      if (ev.target && ev.target.style) ev.target.style.opacity = '1';
+    });
+
+    function allowDropPlayer(ev) {
+      ev.preventDefault();
+    }
+
+    function dropPlayer(ev, toTeamId) {
+      ev.preventDefault();
+      if (!draggedPlayer) return;
+      const { playerId, fromTeamId } = draggedPlayer;
+      if (fromTeamId === toTeamId) return; // Aynı takım
+
+      // Taşıma işlemini sunucuya bildir
+      socket.emit('swapPlayer', { playerId, fromTeamId, toTeamId });
+      draggedPlayer = null;
+    }
+
+    function dropOnPlayer(ev, toTeamId, targetPlayerId) {
+      ev.preventDefault();
+      ev.stopPropagation(); // Kartın genel drop eventini engelle
+      if (!draggedPlayer) return;
+
+      const { playerId, fromTeamId } = draggedPlayer;
+      if (fromTeamId === toTeamId || playerId === targetPlayerId) {
+        draggedPlayer = null;
+        return;
+      }
+
+      // İki oyuncuyu takas et
+      socket.emit('exchangePlayers', { playerA: playerId, playerB: targetPlayerId });
+      draggedPlayer = null;
+    }
+
+    // ─── SORU DOSYASI YÜKLEME ────────────────────────────────────────────
+    function uploadQuestionFile() {
+      const fileInput = document.getElementById('questionFileInput');
+      if (!fileInput || !fileInput.files[0]) { notify('❗ Dosya seçin!'); return; }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          const arr = Array.isArray(data) ? data : (data.questions || []);
+          if (arr.length === 0) { notify('❗ Dosyada soru bulunamadı!'); return; }
+          socket.emit('uploadQuestions', arr);
+        } catch (err) {
+          notify('❗ Geçersiz JSON dosyası!');
+        }
+      };
+      reader.readAsText(fileInput.files[0]);
+    }
+
+    socket.on('questionsUploaded', ({ added, total }) => {
+      notify(`📦 ${added} soru başarıyla yüklendi! Toplam: ${total}`, 4000);
+      const fb = document.getElementById('uploadFeedback');
+      if (fb) {
+        fb.style.display = 'block';
+        fb.innerHTML = `<div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:8px;color:var(--success);font-size:12px;">
+      ✅ ${added} soru yüklendi! Toplam havuz: ${total} soru
+    </div>`;
+      }
+    });
+
+    // ─── DIFFICULTY HELPERS ──────────────────────────────────────────────
+    function diffClass(d) {
+      return 'diff-badge diff-' + d.replace(/\s/g, '').replace('Üstü', 'Üstü');
+    }
+
+    function updateTimerEl(el, val) {
+      if (!el) return;
+      el.textContent = val;
+      el.classList.remove('warn', 'danger');
+      if (val <= 5) el.classList.add('danger');
+      else if (val <= 10) el.classList.add('warn');
+    }
+
+    // ─── RENDER TEAMS GRID ──────────────────────────────────────────────
+    function renderTeamsGrid(containerId, state, opts = {}) {
+      const grid = document.getElementById(containerId);
+      if (!grid) return;
+      grid.innerHTML = '';
+      const teamEntries = Object.entries(state.teams || {});
+      teamEntries.forEach(([tid, t], idx) => {
+        const color = TEAM_COLORS[idx % TEAM_COLORS.length];
+        const isActive = tid === state.currentTeamId;
+        const div = document.createElement('div');
+        div.className = 'team-card' + (isActive ? ' active-team' : '');
+        div.style.borderLeftColor = color;
+        div.setAttribute('ondragover', 'allowDropPlayer(event)');
+        div.setAttribute('ondrop', `dropPlayer(event, '${tid}')`);
+
+        let membersHtml = (t.members || []).map(m => {
+          const icon = m.isCaptain ? '👑' : (m.hasAnswered ? '<span class="answered-check">✅</span>' : '⬜');
+          const cls = m.isCaptain ? 'captain' : '';
+          let attrs = '';
+          if (isHost && state.phase === 'teams') {
+            attrs += ` style="cursor:grab;" draggable="true" ondragstart="dragPlayer(event, '${tid}', '${m.id}')" ondragover="allowDropPlayer(event)" ondrop="dropOnPlayer(event, '${tid}', '${m.id}')"`;
+            if (opts.captainClickable && t.members.length > 1) {
+              attrs = ` style="cursor:grab; text-decoration:underline;" draggable="true" ondragstart="dragPlayer(event, '${tid}', '${m.id}')" ondragover="allowDropPlayer(event)" ondrop="dropOnPlayer(event, '${tid}', '${m.id}')" onclick="setCaptain('${tid}','${m.id}')"`;
+            }
+          }
+          return `<div class="team-member ${cls}"${attrs}>${icon} ${m.name}</div>`;
+        }).join('');
+
+        div.innerHTML = `
+      <div class="t-name" style="color:${color}">${tid}</div>
+      <div class="t-score">${t.score} <span class="muted small" style="font-size:12px;font-weight:400;">puan</span></div>
+      <div>${membersHtml}</div>
+      ${isHost && state.phase === 'teams' && t.members.length === 0 ? `<button onclick="deleteTeam('${tid}')" style="margin-top:8px; width:100%; padding:6px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:var(--error); border-radius:6px; font-size:11px; cursor:pointer;">🗑️ Takımı Sil</button>` : ''}
+    `;
+        grid.appendChild(div);
+      });
+    }
+
+    function setCaptain(teamId, playerId) {
+      socket.emit('setCaptain', { teamId, playerId });
+      notify('👑 Kaptan değiştirildi!');
+    }
+
+    // ─── RENDER SCORE LIST (for result screen) ────────────────────────
+    function renderScoreList(containerId, state) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = '';
+      const teams = Object.entries(state.teams || {}).sort((a, b) => b[1].score - a[1].score);
+      teams.forEach(([tid, t], idx) => {
+        const color = TEAM_COLORS[Object.keys(state.teams).indexOf(tid) % TEAM_COLORS.length];
+        const div = document.createElement('div');
+        div.style.cssText = `display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);`;
+        div.innerHTML = `
+      <span style="color:${color};font-weight:600;font-size:14px;">${tid}</span>
+      <span style="font-weight:800;font-size:15px;">${t.score} puan</span>
+    `;
+        el.appendChild(div);
+      });
+    }
+
+    // ─── SOCKET EVENTS ───────────────────────────────────────────────────
+    socket.on('connect', () => { mySocketId = socket.id; });
+
+    socket.on('joined', ({ name, isHost: host, roomCode }) => {
+      myName = name;
+      isHost = host;
+      showScreen('lobby');
+      if (host) {
+        notify('👑 Oda oluşturuldu! Kod: ' + roomCode, 4000);
+      } else {
+        notify(`✅ Lobiye katıldınız: ${name}`);
+      }
+    });
+
+    socket.on('error', ({ message }) => notify('⚠️ ' + message));
+
+    socket.on('youAreHost', () => {
+      isHost = true;
+      notify('👑 Kurucu rolü size devredildi!');
+    });
+
+    socket.on('hostTransferred', () => {
+      isHost = false;
+      notify('🔄 Kurucu rolünü devrettiniz.');
+    });
+
+    socket.on('gameState', (state) => {
+      lastState = state;
+
+      // Update join screen count
+      const pc = state.playerCount || 0;
+      const jc = document.getElementById('joinCount');
+      if (jc) jc.textContent = pc;
+
+      // Update lobby (phase bazlı; sadece oyuna katılanlar/host lobby ekranına geçsin)
+      if (state.phase === 'lobby') {
+        const hasJoined = !!myName || !!isHost;
+        if (!hasJoined) {
+          // Oyuna katılmadan lobby ekranına düşme (localhost'a yeni girenler join ekranını görsün)
+          if (currentScreen !== 'join') showScreen('join');
+          return;
+        }
+        if (currentScreen !== 'lobby') showScreen('lobby');
+        // Show room code for host
+        const codeDisplay = document.getElementById('lobbyCodeDisplay');
+        if (isHost && state.roomCode) {
+          codeDisplay.style.display = 'block';
+
+          const codeEl = document.getElementById('lobbyRoomCode');
+          // Sadece kod değiştiğinde QR kod renderla (gereksiz istek yapma)
+          if (codeEl.textContent !== state.roomCode) {
+            codeEl.textContent = state.roomCode;
+
+            // QR kod oluştur (bağlantı adresi + room parametresi)
+            const baseUrl = window.location.origin + window.location.pathname;
+            const joinUrl = baseUrl + '?room=' + state.roomCode;
+            const qrContainer = document.getElementById('lobbyQrCode');
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+              text: joinUrl,
+              width: 140,
+              height: 140
+            });
+          }
+        } else {
+          codeDisplay.style.display = 'none';
+        }
+
+        // Build player chip list (host hariç)
+        const plist = document.getElementById('lobbyPlayerList');
+        const players = state.lobbyPlayers || [];
+        const nonHostPlayers = players.filter(p => !p.isHost);
+        const hostPlayer = players.find(p => p.isHost);
+        document.getElementById('lobbyCount').textContent = nonHostPlayers.length;
+
+        // Host ismini ayrı göster
+        const hostNameEl = document.getElementById('lobbyHostName');
+        if (hostNameEl && hostPlayer) hostNameEl.textContent = hostPlayer.name;
+
+        if (nonHostPlayers.length === 0) {
+          plist.innerHTML = '<span class="muted small">Henüz kimse katılmadı...</span>';
+        } else {
+          plist.innerHTML = nonHostPlayers.map(p =>
+            `<div class="chip">
+          <span class="dot"></span>${p.name}
+        </div>`
+          ).join('');
+        }
+
+        // Host UI ve Wait UI
+        const hostBadge = document.getElementById('lobbyHostBadge');
+        const hostStart = document.getElementById('hostStartWrap');
+        const playerWait = document.getElementById('playerWaitLobby');
+
+        // Host badge her zaman görünsün (eğer host varsa)
+        if (hostBadge && hostPlayer) {
+          hostBadge.style.display = 'block';
+        }
+
+        if (isHost) {
+          hostStart.style.display = pc >= 2 ? 'block' : 'none';
+          playerWait.style.display = 'none';
+          // Transfer dropdown'ını güncelle
+          const sel = document.getElementById('transferHostSelect');
+          if (sel) {
+            const currentVal = sel.value;
+            sel.innerHTML = '<option value="">Oyuncu seç...</option>';
+            players.filter(p => !p.isHost).forEach(p => {
+              sel.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+            });
+            if (currentVal) sel.value = currentVal;
+          }
+
+          // Soru Ekle butonu
+          const addQWrap = document.getElementById('hostAddQWrap');
+          if (addQWrap) addQWrap.style.display = 'block';
+        } else {
+          hostStart.style.display = 'none';
+          playerWait.style.display = 'block';
+          const addQWrap = document.getElementById('hostAddQWrap');
+          if (addQWrap) addQWrap.style.display = 'none';
+        }
+      }
+
+      // Teams phase
+      if (state.phase === 'teams' && currentScreen !== 'host' && currentScreen !== 'captain'
+        && currentScreen !== 'question' && currentScreen !== 'waiting'
+        && currentScreen !== 'waitcaptain' && currentScreen !== 'result'
+        && currentScreen !== 'scoreboard') {
+        const teamCount = Object.keys(state.teams).length;
+        const isSoloMode = Object.values(state.teams).every(t => t.totalMembers === 1);
+        document.getElementById('teamsInfo').textContent = isSoloMode
+          ? `${teamCount} oyuncu solo yarışıyor! Herkes kendi kaptanı.`
+          : `${teamCount} takım oluşturuldu.`;
+
+        renderTeamsGrid('teamsGridView', state, { captainClickable: true });
+
+        if (isHost) {
+          document.getElementById('hostBeginWrap').style.display = 'block';
+          document.getElementById('playerWaitTeams').style.display = 'none';
+
+          const pc = state.totalPlayers || 0;
+
+
+          // Popülasyon işlemleri (Çoklu Oyuncu Taşıma)
+          const pSel = document.getElementById('bulkPlayerSelect');
+          const tSel = document.getElementById('manualTeamSelect');
+          if (pSel && tSel) {
+            const currentT = tSel.value;
+            pSel.innerHTML = '';
+            tSel.innerHTML = '<option value="">Hedef Takım Seç...</option>';
+
+            Object.keys(state.teams).forEach(tid => {
+              const team = state.teams[tid];
+              tSel.innerHTML += `<option value="${tid}">${tid} (${team.members.length} kişi)</option>`;
+              team.members.forEach(m => {
+                const isSelected = selectedBulkPlayers.has(m.id);
+                const border = isSelected ? "1px solid var(--primary)" : "1px solid var(--border)";
+                const bg = isSelected ? "rgba(99,102,241,0.2)" : "var(--surface)";
+                const dotBg = isSelected ? 'var(--primary)' : 'var(--muted)';
+                pSel.innerHTML += `<div class="chip" style="cursor:pointer; border:${border}; background:${bg}; user-select:none; transition:0.2s;" onclick="toggleBulkPlayer('${m.id}', this)">
+                  <span class="dot" style="background:${dotBg}"></span>${m.name} <span class="muted" style="font-size:10px">(${tid})</span>
+                </div>`;
+              });
+            });
+            if (currentT) tSel.value = currentT;
+          }
+        } else {
+          document.getElementById('hostBeginWrap').style.display = 'none';
+          document.getElementById('playerWaitTeams').style.display = 'block';
+        }
+
+        showScreen('teams');
+      }
+
+      // Host dashboard during gameplay
+      if (isHost && ['active_round', 'captain_pick'].includes(state.phase)) {
+        if (state.phase === 'captain_pick') {
+          document.getElementById('hostProgress').textContent = state.assignedTeamsCount || 0;
+          document.getElementById('hostTotal').textContent = state.totalTeams || 0;
+          const hostLabel = document.getElementById('hostProgressLabel');
+          if (hostLabel) hostLabel.textContent = 'kaptan seçti';
+          const pct = state.totalTeams > 0 ? Math.round((state.assignedTeamsCount / state.totalTeams) * 100) : 0;
+          document.getElementById('hostProgressBar').style.width = pct + '%';
+          document.getElementById('hostStatusText').textContent = 'Kaptanların seçimi bekleniyor (15 saniye)...';
+        } else {
+          document.getElementById('hostProgress').textContent = state.answeredTeams || 0;
+          document.getElementById('hostTotal').textContent = state.totalTeams || 0;
+          const hostLabel = document.getElementById('hostProgressLabel');
+          if (hostLabel) hostLabel.textContent = 'takım cevapladı';
+          const pct = state.totalTeams > 0 ? Math.round((state.answeredTeams / state.totalTeams) * 100) : 0;
+          document.getElementById('hostProgressBar').style.width = pct + '%';
+          document.getElementById('hostStatusText').textContent = 'Tüm takımlar soruları çözüyor...';
+        }
+
+        document.getElementById('hostSendBtn').style.display = 'none';
+
+        const qi = document.getElementById('hostQuestionInfo');
+        qi.style.display = 'block';
+
+        if (state.currentQuestion) {
+          document.getElementById('hostCatBadge').textContent = state.currentQuestion.category;
+          const hdb = document.getElementById('hostDiffBadge');
+          hdb.textContent = state.currentQuestion.difficulty;
+          hdb.className = diffClass(state.currentQuestion.difficulty);
+        }
+
+        if (state.phase === 'captain_pick') {
+          const isSoloMode = Object.values(state.teams).every(t => t.totalMembers === 1);
+          document.getElementById('hostStatusText').textContent = isSoloMode ? '⏱ Oyuncular hazırlanıyor...' : '👑 Kaptan seçim yapıyor...';
+          document.getElementById('hostAnsweringName').textContent = '';
+        } else if (state.phase === 'answering') {
+          document.getElementById('hostStatusText').textContent = '⏱ Oyuncu cevaplıyor...';
+          document.getElementById('hostAnsweringName').textContent = '🎯 Cevaplayan: ' + (state.assignedPlayerName || '?');
+        }
+
+        renderTeamsGrid('hostTeamsGrid', state);
+        if (currentScreen !== 'host') showScreen('host');
+      }
+
+      // Update waiting screen teams
+      if (currentScreen === 'waiting') renderTeamsGrid('waitTeamsGrid', state);
+      if (currentScreen === 'waitcaptain') renderTeamsGrid('wcTeamsGrid', state);
+    });
+
+    // ── Captain Pick (only captain receives) ──
+    socket.on('captainPick', ({ category, difficulty, timer, unansweredMembers }) => {
+      document.getElementById('captCatBadge').textContent = category;
+      const cdb = document.getElementById('captDiffBadge');
+      cdb.textContent = difficulty;
+      cdb.className = diffClass(difficulty);
+      document.getElementById('captTimerInfo').textContent = timer;
+
+      const list = document.getElementById('captainPickList');
+      list.innerHTML = '';
+      unansweredMembers.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'pick-btn';
+        const isSelf = m.id === mySocketId;
+        btn.innerHTML = `
+      <div class="avatar">${m.name.charAt(0).toUpperCase()}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;">${m.name} ${isSelf ? '<span class="self-tag">SEN</span>' : ''}</div>
+        <div class="muted small">Bu soruyu ona yönlendir</div>
+      </div>
+    `;
+        btn.onclick = () => {
+          list.querySelectorAll('.pick-btn').forEach(b => b.disabled = true);
+          socket.emit('assignPlayer', { targetSocketId: m.id });
+          // Notify them but keep them here until active_round starts
+          btn.innerHTML = `<div style="width:100%; text-align:center;">Seçildi! Diğer takımlar bekleniyor...</div>`;
+          btn.style.background = 'var(--success)';
+          btn.style.color = 'white';
+        };
+        list.appendChild(btn);
+      });
+
+      showScreen('captain');
+    });
+
+    // ── Get Ready (Solo Mode Wait) ──
+    socket.on('getReady', ({ category, difficulty, timer }) => {
+      if (isHost) return;
+      document.getElementById('grCatBadge').textContent = category;
+      const grdb = document.getElementById('grDiffBadge');
+      grdb.textContent = difficulty;
+      grdb.className = diffClass(difficulty);
+      document.getElementById('grTimer').textContent = timer;
+      showScreen('getready');
+    });
+
+    // ── Question (assigned player) ──
+    socket.on('yourQuestion', ({ question, options, category, difficulty, timer, type, fen, grid1, grid2 }) => {
+      document.getElementById('qCatBadge').textContent = category;
+      const qdb = document.getElementById('qDiffBadge');
+      qdb.textContent = difficulty;
+      qdb.className = diffClass(difficulty);
+      document.getElementById('questionText').textContent = question;
+
+      // Banner güncelle
+      const banner = document.getElementById('qModeBanner');
+      const bannerIcons = { chess: '♟️ SATRANÇ BULMACASI', spotdiff: '🔍 FARK BUL' };
+      const bannerLabel = bannerIcons[type] || '⚡ SORU SİZE YÖNLENDİRİLDİ';
+      const bannerColors = {
+        chess: 'rgba(234,179,8,0.08)', spotdiff: 'rgba(34,197,94,0.08)',
+      };
+      const bColor = bannerColors[type] || 'rgba(99,102,241,0.08)';
+      const bBorder = type === 'chess' ? 'rgba(234,179,8,0.2)' : type === 'spotdiff' ? 'rgba(34,197,94,0.2)' : 'rgba(99,102,241,0.2)';
+      const bTextColor = type === 'chess' ? 'var(--warning)' : type === 'spotdiff' ? 'var(--success)' : 'var(--primary)';
+      banner.innerHTML = `<div style="background:${bColor};border:1px solid ${bBorder};border-radius:10px;padding:12px 14px;margin-bottom:18px;">
+    <div style="font-size:12px;color:${bTextColor};font-weight:700;">${bannerLabel}</div>
+    <div id="qBannerTextSub" class="muted small mt-8">Doğru cevabı süre dolmadan seçin!</div>
+  </div>`;
+
+      // ── Satranç Tahtası Render ──
+      const qTextEl = document.getElementById('questionText');
+      if (type === 'chess' && fen) {
+        // Her iki taraf için de içi dolu (solid) satranç taşı karakterlerini kullanıp
+        // CSS ile renklerini ve gölgelerini belirliyoruz, bu sayede çok daha net oluyorlar.
+        const PIECE_MAP = {
+          'K': '♚', 'Q': '♛', 'R': '♜', 'B': '♝', 'N': '♞', 'P': '♟',
+          'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
+        };
+        const fenParts = fen.split(' ');
+        const isBlackToMove = fenParts.length > 1 && fenParts[1] === 'b';
+        const rows = fenParts[0].split('/');
+
+        let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+        let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        
+        // 2B Grid oluşturalım
+        const grid = [];
+        rows.forEach(rowStr => {
+          const rowArr = [];
+          for (const ch of rowStr) {
+            if (ch >= '1' && ch <= '8') {
+              for (let e = 0; e < parseInt(ch); e++) rowArr.push('');
+            } else {
+              rowArr.push(ch);
+            }
+          }
+          grid.push(rowArr);
+        });
+
+        // Eğer hamle sırası siyahtaysa tahtayı ters çevir
+        if (isBlackToMove) {
+          ranks.reverse();
+          files.reverse();
+          grid.reverse();
+          grid.forEach(r => r.reverse());
+        }
+
+        let boardHtml = `
+          <div class="chess-container">
+            <div style="text-align:center;margin-bottom:12px;">
+              <span style="font-weight:900;letter-spacing:1px;font-size:14px;padding:6px 16px;border-radius:20px;background:${isBlackToMove ? '#111' : '#fff'};color:${isBlackToMove ? '#fff' : '#111'};border:2px solid ${isBlackToMove ? '#333' : '#ddd'};box-shadow:0 4px 10px rgba(0,0,0,0.2);">
+                ${isBlackToMove ? '⚫ SIRA SİYAHTA' : '⚪ SIRA BEYAZDA'}
+              </span>
+            </div>
+            <div class="chess-board-wrapper">
+              <div class="chess-board-with-coords">
+                <div class="chess-rank-labels">
+                  ${ranks.map(r => `<div class="chess-rank-label">${r}</div>`).join('')}
+                </div>
+                <div class="chess-board">
+        `;
+        
+        grid.forEach((row, ri) => {
+          row.forEach((ch, ci) => {
+            const cls = (ri + ci) % 2 === 0 ? 'light' : 'dark';
+            let pieceHtml = '';
+            if (ch) {
+              const isWhite = ch === ch.toUpperCase();
+              pieceHtml = `<span class="chess-piece ${isWhite ? 'white-piece' : 'black-piece'}">${PIECE_MAP[ch]}</span>`;
+            }
+            boardHtml += `<div class="chess-cell ${cls}">${pieceHtml}</div>`;
+          });
+        });
+        boardHtml += `
+                </div>
+                <div class="chess-file-labels">
+                  ${files.map(f => `<div class="chess-file-label">${f}</div>`).join('')}
+                </div>
+              </div>
+              <div class="chess-fen"><b>FEN:</b> ${fen}</div>
+            </div>
+          </div>
+        `;
+        qTextEl.innerHTML = question + boardHtml;
+      }
+
+      // ── Fark Bul Grid Render ──
+      if (type === 'spotdiff' && grid1 && grid2) {
+        const cols = Math.ceil(Math.sqrt(grid1.length));
+        const makeGrid = (arr, label) => {
+          let html = `<div class="spotdiff-panel"><div class="panel-label">${label}</div><div class="emoji-grid" style="grid-template-columns:repeat(${cols},1fr);">`;
+          arr.forEach(emoji => { html += `<div class="emoji-cell">${emoji}</div>`; });
+          html += '</div></div>';
+          return html;
+        };
+        qTextEl.innerHTML = question + `<div class="spotdiff-container">${makeGrid(grid1, 'Orijinal')}${makeGrid(grid2, 'Değişmiş')}</div>`;
+      }
+
+      const grid = document.getElementById('optionsGrid');
+      grid.innerHTML = '';
+      let answered = false;
+
+      if (type === 'truefalse') {
+        grid.className = 'tf-grid';
+        options.forEach((opt, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'tf-btn ' + (idx === 0 ? 'tf-true' : 'tf-false');
+          btn.innerHTML = (idx === 0 ? '✅ ' : '❌ ') + opt;
+          btn.onclick = () => {
+            if (answered) return;
+            answered = true;
+            grid.querySelectorAll('.tf-btn').forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
+            btn.style.opacity = '1';
+            btn.classList.add('selected');
+            socket.emit('submitAnswer', { answerIndex: idx });
+          };
+          grid.appendChild(btn);
+        });
+      } else {
+        grid.className = 'options-list' + (type === 'chess' ? ' chess-options' : '');
+        const letters = ['A', 'B', 'C', 'D'];
+        options.forEach((opt, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'opt-btn';
+          if (type === 'chess') {
+            const raw = String(opt || '').trim();
+            const openIdx = raw.indexOf('(');
+            const closeIdx = raw.lastIndexOf(')');
+            const hasHint = openIdx !== -1 && closeIdx > openIdx;
+            const moveText = hasHint ? raw.slice(0, openIdx).trim() : raw;
+            const hintText = hasHint ? raw.slice(openIdx + 1, closeIdx).trim() : '';
+            btn.innerHTML = `
+              <div class="opt-letter">${letters[idx]}</div>
+              <div class="chess-opt">
+                <div class="chess-move">${moveText || raw}</div>
+                ${hintText ? `<div class="chess-hint">${hintText}</div>` : ''}
+              </div>
+            `;
+          } else {
+            btn.innerHTML = `<div class="opt-letter">${letters[idx]}</div><div>${opt}</div>`;
+          }
+          btn.onclick = () => {
+            if (answered) return;
+            answered = true;
+            grid.querySelectorAll('.opt-btn').forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
+            btn.style.opacity = '1';
+            btn.classList.add('selected');
+            socket.emit('submitAnswer', { answerIndex: idx });
+          };
+          grid.appendChild(btn);
+        });
+      }
+
+      showScreen('question');
+    });
+
+    // ── Anında cevap geri bildirimi ──
+    socket.on('answerAck', ({ isCorrect, points, correctAnswerIndex, timeTaken }) => {
+      if (currentScreen !== 'question') return;
+      
+      const banner = document.getElementById('qModeBanner');
+      if (!banner) return;
+
+      // Butonları doğru/yanlış olarak renklendir
+      const allBtns = document.querySelectorAll('.opt-btn, .tf-btn');
+      allBtns.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === correctAnswerIndex) {
+          btn.classList.add('correct');
+        }
+      });
+
+      if (isCorrect) {
+        banner.innerHTML = `<div style="background:rgba(34,197,94,0.12);border:2px solid rgba(34,197,94,0.4);border-radius:10px;padding:14px;margin-bottom:18px;text-align:center;">
+          <div style="font-size:20px;font-weight:bold;color:var(--success);">✅ DOĞRU BİLDİNİZ!</div>
+          <div style="font-size:13px;color:var(--text);margin-top:4px;opacity:0.9;">${timeTaken} saniyede cevapladınız · <b>+${points} puan</b></div>
+        </div>`;
+      } else {
+        banner.innerHTML = `<div style="background:rgba(239,68,68,0.12);border:2px solid rgba(239,68,68,0.4);border-radius:10px;padding:14px;margin-bottom:18px;text-align:center;">
+          <div style="font-size:20px;font-weight:bold;color:var(--error);">❌ YANLIŞ CEVAP!</div>
+          <div style="font-size:13px;color:var(--text);margin-top:4px;opacity:0.9;">${timeTaken} saniyede cevapladınız · <b>${points} puan</b></div>
+        </div>`;
+      }
+    });
+
+    // ── Takım arkadaşı cevapladığında bekleyen oyuncuya anlık bildirim ──
+    socket.on('teammateAnswered', ({ isCorrect, points, playerName, timeTaken }) => {
+      if (currentScreen === 'waiting') {
+        const waitPlayerEl = document.getElementById('waitPlayerName');
+        const waitInfoEl = document.getElementById('waitInfo');
+        // Spinner'ı kaldır ve sonucu göster
+        const spinnerEl = document.querySelector('#screen-waiting .spinner');
+        if (spinnerEl) spinnerEl.style.display = 'none';
+
+        if (waitPlayerEl) {
+          if (isCorrect) {
+            waitPlayerEl.innerHTML = `<span style="color:var(--success);">${playerName}</span>`;
+            waitPlayerEl.parentElement.innerHTML = `<span style="color:var(--success);font-size:22px;">✅ ${playerName} DOĞRU BİLDİ!</span>`;
+          } else {
+            waitPlayerEl.innerHTML = `<span style="color:var(--error);">${playerName}</span>`;
+            waitPlayerEl.parentElement.innerHTML = `<span style="color:var(--error);font-size:22px;">❌ ${playerName} yanlış cevap verdi</span>`;
+          }
+        }
+        if (waitInfoEl) {
+          if (isCorrect) {
+            waitInfoEl.innerHTML = `<span style="color:var(--success);font-weight:bold;">+${points} puan · ${timeTaken} saniyede çözdü! 🎉</span>`;
+          } else {
+            waitInfoEl.innerHTML = `<span style="color:var(--error);font-weight:bold;">${points} puan · ${timeTaken} saniyede cevapladı</span>`;
+          }
+        }
+      }
+      // Bildirim de göster
+      if (isCorrect) {
+        notify(`✅ ${playerName} doğru bildi! (+${points} puan)`, 3000);
+      } else {
+        notify(`❌ ${playerName} yanlış cevap verdi (${points} puan)`, 3000);
+      }
+    });
+
+    // ── Waiting for answer ──
+    socket.on('waitingFor', ({ playerName, teamId, category, difficulty }) => {
+      if (isHost) return; // Host has own dashboard
+      document.getElementById('waitPlayerName').textContent = playerName;
+      document.getElementById('waitInfo').textContent = `${teamId} takımı adına cevaplıyor.`;
+      // Spinner'ı geri getir (yeni tur için)
+      const spinnerEl = document.querySelector('#screen-waiting .spinner');
+      if (spinnerEl) spinnerEl.style.display = 'block';
+      document.querySelector('#screen-waiting .spinner + div').innerHTML = `<span id="waitPlayerName">${playerName}</span> cevaplıyor...`;
+      document.getElementById('waitCatBadge').textContent = category;
+      const wdb = document.getElementById('waitDiffBadge');
+      wdb.textContent = difficulty;
+      wdb.className = diffClass(difficulty);
+      renderTeamsGrid('waitTeamsGrid', lastState);
+      showScreen('waiting');
+    });
+
+    // ── Waiting for captain ──
+    socket.on('waitingForCaptain', ({ captainName, teamId, category, difficulty }) => {
+      if (isHost) return;
+      document.getElementById('wcCaptainName').textContent = captainName;
+      document.getElementById('wcCatBadge').textContent = category;
+      const wcdb = document.getElementById('wcDiffBadge');
+      wcdb.textContent = difficulty;
+      wcdb.className = diffClass(difficulty);
+      renderTeamsGrid('wcTeamsGrid', lastState);
+      showScreen('waitcaptain');
+    });
+
+    // ── Timer ticks ──
+    socket.on('timerTick', ({ value, max }) => {
+      ['qTimer', 'waitTimer', 'hostTimer', 'captTimerInfo', 'grTimer'].forEach(id => {
+        updateTimerEl(document.getElementById(id), value);
+      });
+
+      // Eğer ekrandaki oyuncu bir soru çözüyorsa ve süre azaldıysa heyecanlı bir mesaj çıkaralım
+      if (currentScreen === 'question') {
+        const bannerText = document.getElementById('qBannerTextSub');
+        if (bannerText) {
+          if (value <= 5) {
+            bannerText.innerHTML = '<span style="color:var(--error);font-weight:bold;">⏰ SÜRE BİTİYOR, ACELE ET!</span>';
+          } else {
+            bannerText.textContent = 'Doğru cevabı süre dolmadan seçin!';
+          }
+        }
+      }
+
+      // Host: update question text if we have it
+      if (isHost && lastState.currentQuestion) {
+        // Already displayed via gameState
+      }
+    });
+
+    // ── Round result ──
+    socket.on('roundResult', ({ correctAnswerText, correctAnswerIndex, question, results }) => {
+      // If on question screen, highlight correct/wrong options
+      if (currentScreen === 'question') {
+        const btns = document.querySelectorAll('.opt-btn');
+        btns.forEach(btn => btn.disabled = true);
+
+        // Find my team's choice if I answered
+        const myTeamId = Object.keys(lastState.teams).find(tid => lastState.teams[tid].members.some(m => m.id === mySocketId));
+        let myChoice = -1;
+        if (myTeamId && results[myTeamId]) myChoice = results[myTeamId].answerIndex;
+
+        btns.forEach((btn, idx) => {
+          if (idx === correctAnswerIndex) btn.classList.add('correct');
+          else if (idx === myChoice && myChoice !== correctAnswerIndex) btn.classList.add('wrong');
+        });
+      }
+
+      setTimeout(() => {
+        // Takımımın sonucuna göre tepe ikonunu belirle
+        const myTeamId = Object.keys(lastState.teams).find(tid => lastState.teams[tid].members.some(m => m.id === mySocketId));
+        let topIcon = '🏁'; // Host veya oynamayanlar için varsayılan
+        if (!isHost && myTeamId && results[myTeamId]) {
+          const myRes = results[myTeamId];
+          if (myRes.isCorrect) topIcon = '🎉';
+          else if (myRes.status === 'timeout') topIcon = '⏰';
+          else topIcon = '😔';
+        }
+
+        document.getElementById('resIcon').textContent = topIcon;
+        const rt = document.getElementById('resTitle');
+        rt.textContent = 'Tur Sonucu';
+        rt.className = 'result-title';
+        document.getElementById('resCorrectText').textContent = correctAnswerText;
+
+        // Display my team's personal status
+        const mb = document.getElementById('resMyTeamBox');
+        if (!isHost && myTeamId && results[myTeamId]) {
+          const myRes = results[myTeamId];
+          // Görsel güncellemeler (Kutuyu daha büyük ve gösterişli yapıyoruz)
+          mb.style.display = 'flex';
+          mb.style.flexDirection = 'column';
+          mb.style.gap = '8px';
+          mb.style.border = myRes.isCorrect ? '2px solid var(--success)' : (myRes.status === 'timeout' ? '2px solid var(--warning)' : '2px solid var(--error)');
+          mb.style.background = myRes.isCorrect ? 'rgba(34,197,94,0.08)' : (myRes.status === 'timeout' ? 'rgba(234,179,8,0.08)' : 'rgba(239,68,68,0.08)');
+          mb.style.padding = '16px';
+          mb.style.borderRadius = '12px';
+
+          let statusHtml = '';
+          if (myRes.isCorrect) {
+            statusHtml = `<div style="display:flex;align-items:center;gap:8px;font-size:18px;font-weight:bold;color:var(--success);">✅ Doğru Bildiniz!</div>`;
+            statusHtml += `<div style="font-size:13px;color:var(--text);opacity:0.9;">Bu soruyu <b>${myRes.timeTaken} saniyede</b> çözdünüz.</div>`;
+            if (myRes.isFastest) {
+              statusHtml += `<div style="background:rgba(234,179,8,0.15);color:var(--warning);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:bold;border:1px solid var(--warning);display:inline-block;margin-top:4px;">⚡ EN HIZLI SİZ CEVAP VERDİNİZ!</div>`;
+            }
+          } else if (myRes.status === 'timeout') {
+            statusHtml = `<div style="display:flex;align-items:center;gap:8px;font-size:18px;font-weight:bold;color:var(--warning);">⏰ Süre Doldu!</div>`;
+          } else {
+            statusHtml = `<div style="display:flex;align-items:center;gap:8px;font-size:18px;font-weight:bold;color:var(--error);">❌ Yanlış Cevap!</div>`;
+            if (myRes.timeTaken !== undefined) {
+              statusHtml += `<div style="font-size:13px;color:var(--text);opacity:0.9;"><b>${myRes.timeTaken} saniyede</b> cevap verdiniz ama maalesef yanlış.</div>`;
+            }
+          }
+
+          document.getElementById('resMyIcon').innerHTML = statusHtml;
+          const ptsEl = document.getElementById('resMyPoints');
+          ptsEl.style.cssText = "font-size:24px;font-weight:bold;margin-top:6px;";
+          ptsEl.innerHTML = `${(myRes.points > 0 ? '+' : '')}${myRes.points} Puan`;
+
+        } else {
+          mb.style.display = 'none';
+        }
+
+        // Build round performance grid
+        const rGrid = document.getElementById('resRoundGrid');
+        rGrid.innerHTML = Object.entries(results).map(([tid, res]) => {
+          const color = res.isCorrect ? 'var(--success)' : (res.status === 'timeout' ? 'var(--warning)' : 'var(--error)');
+          return `
+        <div style="background:rgba(255,255,255,0.05); border-left: 4px solid ${color}; padding:8px 12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+          <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;">${tid} ${res.isFastest ? '<span title="En hızlı çözen oyuncu/takım" style="background:rgba(234,179,8,0.2);padding:2px 6px;border-radius:4px;font-size:11px;">⚡ En Hızlı</span>' : ''}</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;">
+            <div style="font-size:13px;color:${color};font-weight:bold;">${res.points > 0 ? '+' + res.points : res.points}</div>
+            <div style="font-size:10px;" class="muted">${res.playerName}</div>
+          </div>
+        </div>
+      `;
+        }).join('');
+
+        renderScoreList('resScoreList', lastState);
+
+        // Host vs Player buttons
+        if (isHost) {
+          document.getElementById('resHostBtns').style.display = 'flex';
+          document.getElementById('resPlayerWait').style.display = 'none';
+          document.getElementById('hostSendBtn').style.display = 'block';
+          document.getElementById('hostQuestionInfo').style.display = 'none';
+          document.getElementById('hostStatusText').textContent = 'Soru göndermeye hazır';
+
+          // Host counter'ı sıfırla (eski "1/2" kalmasın)
+          const totalTeams = lastState.totalTeams || Object.keys(results).length;
+          document.getElementById('hostProgress').textContent = totalTeams;
+          document.getElementById('hostTotal').textContent = totalTeams;
+          document.getElementById('hostProgressBar').style.width = '100%';
+
+          const btnNext = document.getElementById('btnNextQuestion');
+          if (btnNext) {
+            if (lastState.currentQuestionIndex >= lastState.maxQuestions) {
+              btnNext.style.display = 'none';
+            } else {
+              btnNext.style.display = 'block';
+            }
+          }
+        } else {
+          document.getElementById('resHostBtns').style.display = 'none';
+          document.getElementById('resPlayerWait').style.display = 'block';
+        }
+
+        showScreen('result');
+      }, currentScreen === 'question' ? 1200 : 100);
+    });
+
+    // ── Game over ──
+    socket.on('gameOver', (scores) => {
+      const list = document.getElementById('finalScoreList');
+      list.innerHTML = '';
+      const medals = ['🥇', '🥈', '🥉'];
+      const rankClasses = ['gold', 'silver', 'bronze'];
+
+      scores.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'score-item ' + (rankClasses[i] || '');
+        div.style.animationDelay = (i * 0.1) + 's';
+        const membersText = s.members.map(m => `${m.name} (${m.score}p)`).join(', ');
+        div.innerHTML = `
+      <div class="rank-icon">${medals[i] || (i + 1) + '.'}</div>
+      <div class="score-info">
+        <div class="score-name">${s.teamId}</div>
+        <div class="score-members">${membersText}</div>
+      </div>
+      <div class="score-pts">${s.score}</div>
+    `;
+        list.appendChild(div);
+      });
+
+      document.getElementById('sbHostBtns').style.display = isHost ? 'block' : 'none';
+      showScreen('scoreboard');
+    });
+
+    // ── Game restarted ──
+    socket.on('gameRestarted', () => {
+      myName = null;
+      isHost = false;
+      showScreen('join');
+      notify('🔄 Oyun sıfırlandı! Yeniden katılın.');
+    });
+
+    // ─── Enter key handlers ──────────────────────────────────────────────
+    document.getElementById('hostNameInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') createGame();
+    });
+    document.getElementById('playerNameInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') joinGame();
+    });
+    document.getElementById('roomCodeInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('playerNameInput').focus();
+    });
+    // Only allow numbers in room code
+    document.getElementById('roomCodeInput').addEventListener('input', e => {
+      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+    });
+
+    // URL'den otomatik oda kodu okuma (QR Kod ile gelenler için)
+    window.onload = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const room = urlParams.get('room');
+      if (room && room.length === 4) {
+        document.getElementById('roomCodeInput').value = room;
+        setTimeout(() => {
+          document.getElementById('playerNameInput').focus();
+          notify('📱 QR Kod Okundu: Oda kodu otomatik dolduruldu!', 4000);
+        }, 500);
+
+        // URL'den query'i temizle ki yenilefince tekrar algılamasın
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    };
+
+    // Bulk Player Move Functions
+    let selectedBulkPlayers = new Set();
+    function toggleBulkPlayer(id, el) {
+      if(selectedBulkPlayers.has(id)) {
+        selectedBulkPlayers.delete(id);
+        el.style.border = "1px solid var(--border)";
+        el.style.background = "var(--surface)";
+        el.querySelector('.dot').style.background = 'var(--muted)';
+      } else {
+        selectedBulkPlayers.add(id);
+        el.style.border = "1px solid var(--primary)";
+        el.style.background = "rgba(99,102,241,0.2)";
+        el.querySelector('.dot').style.background = 'var(--primary)';
+      }
+    }
+
+    function bulkMovePlayers() {
+      const toTeamId = document.getElementById('manualTeamSelect').value;
+      if(selectedBulkPlayers.size === 0) return notify('Önce taşınacak oyuncuları seçin!', 3000, 'error');
+      if(!toTeamId) return notify('Hedef takım seçin!', 3000, 'error');
+      
+      socket.emit('movePlayersBulk', { playerIds: Array.from(selectedBulkPlayers), toTeamId });
+      selectedBulkPlayers.clear();
+    }
+  </script>
+</body>
+
+</html>

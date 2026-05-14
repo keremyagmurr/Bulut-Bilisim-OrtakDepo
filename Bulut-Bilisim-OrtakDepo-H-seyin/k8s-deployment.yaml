@@ -1,0 +1,122 @@
+# 1. Persistent Volume Claim (PVC) - Veri kalıcılığı için zorunlu
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: trivia-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi # 1 GB alan ödev için yeterli
+---
+# 2. NetworkPolicy - Ağ güvenliği kuralları için zorunlu
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: trivia-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: trivia-node
+  policyTypes:
+  - Ingress
+  ingress:
+  - from: [] # Her yerden erişime izin ver (veya kısıtla)
+    ports:
+    - protocol: TCP
+      port: 3000
+---
+# 3. Deployment - Uygulama kopyaları ve kalıcı veri montajı
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trivia-node
+  labels:
+    app: trivia-node
+spec:
+  replicas: 3          # 3 Pod kopyası
+  selector:
+    matchLabels:
+      app: trivia-node
+  strategy:
+    type: RollingUpdate # Kesintisiz güncelleme stratejisi
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: trivia-node
+    spec:
+      containers:
+        - name: trivia-node
+          image: keremyagmur/trivia-node:latest # Docker Hub imajın
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              value: "production"
+          volumeMounts:
+            - name: trivia-storage
+              mountPath: /app/data # Uygulama içinde verilerin saklanacağı klasör
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+      volumes:
+        - name: trivia-storage
+          persistentVolumeClaim:
+            claimName: trivia-pvc
+---
+# 4. Service - LoadBalancer (Dış IP sağlar)
+apiVersion: v1
+kind: Service
+metadata:
+  name: trivia-node-service
+spec:
+  selector:
+    app: trivia-node
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer # Akamai size gerçek bir Public IP verecek
+---
+# 5. Horizontal Pod Autoscaler (HPA) - Otomatik Ölçekleme
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: trivia-node-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: trivia-node
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
