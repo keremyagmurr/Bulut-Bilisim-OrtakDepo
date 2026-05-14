@@ -16,7 +16,7 @@ metadata:
     app: trivia-node
     version: v1
 spec:
-  replicas: 2                      # 2 Pod — Yüksek erişilebilirlik
+  replicas: 1                      # 1 Pod — PVC (ReadWriteOnce) uyumluluğu için
   revisionHistoryLimit: 5          # Son 5 sürümü sakla (rollback için)
   selector:
     matchLabels:
