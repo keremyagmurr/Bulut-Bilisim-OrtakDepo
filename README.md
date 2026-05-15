@@ -25,37 +25,49 @@
 
 ## 📑 İçindekiler
 
-1. [Proje Hakkında](#-proje-hakkında)
-2. [Uygulama Mimarisi](#-uygulama-mimarisi)
-3. [Kubernetes Mimarisi](#-kubernetes-mimarisi)
-4. [Sistem Mimarisi](#-sistem-mimarisi)
-5. [CI/CD Pipeline Akışı](#-cicd-pipeline-akışı)
-6. [Deployment, Service, PV/PVC ve NetworkPolicy](#-deployment-service-pvpvc-ve-networkpolicy-kullanımı)
-7. [Rolling Update, Rollback ve Ölçekleme](#-rolling-update-rollback-ve-ölçekleme-adımları)
-8. [Hızlı Başlangıç](#-hızlı-başlangıç)
-9. [Proje Yapısı](#-proje-yapısı)
-10. [Soru Bankası](#-soru-bankası)
-11. [Sunum Şovları](#-sunum-şovları)
-12. [Kapatma Rehberi](#-kapatma-rehberi)
+1. [Proje Hakkında](#proje-hakkında)
+2. [Uygulama Mimarisi](#uygulama-mimarisi)
+3. [Kubernetes Mimarisi](#kubernetes-mimarisi)
+4. [Sistem Mimarisi](#sistem-mimarisi)
+5. [CI/CD Pipeline Akışı](#cicd-pipeline-akışı)
+6. [Deployment, Service, PV/PVC ve NetworkPolicy](#deployment-service-pvpvc-ve-networkpolicy)
+7. [Rolling Update, Rollback ve Ölçekleme](#rolling-update-rollback-ve-ölçekleme)
+8. [Proje Yapısı](#proje-yapısı)
+9. [Sunum Şovları](#sunum-şovları)
+10. [Kapatma Rehberi](#kapatma-rehberi)
 
 ---
 
-## 🎯 Proje Hakkında
+<a id="proje-hakkında"></a>
+
+## Proje Hakkında
 
 **ClusterQuiz**, sınıf ortamında öğrencilerin telefonlarından katılarak takım halinde yarıştığı gerçek zamanlı bir bilgi yarışması oyunudur. Uygulama Docker ile containerize edilmiş ve Akamai (Linode) Kubernetes Engine üzerinde deploy edilmiştir.
 
-### Temel Özellikler
-- 🎮 **Gerçek zamanlı oyun** — Socket.io ile anlık iletişim
-- 👥 **Takım bazlı** — Solo, İkili, Üçlü, Dörtlü modlar
-- 🧑‍✈️ **Kaptan sistemi** — Her takımdan bir kaptan soru yönlendirir
-- ♟️ **Çoklu soru türü** — Çoktan seçmeli, Doğru/Yanlış, Satranç, Fark Bul
-- 📱 **Mobil uyumlu** — Telefon tarayıcısından erişim
-- ☸️ **Kubernetes** — Otomatik ölçekleme, self-healing, rolling update
-- 🔄 **CI/CD** — Jenkins pipeline ile otomatik build & deploy
+**Temel Özellikler:**
+- 🎮 Gerçek zamanlı oyun — Socket.io ile anlık iletişim
+- 👥 Takım bazlı — Solo, İkili, Üçlü, Dörtlü modlar
+- ♟️ Çoklu soru türü — Çoktan seçmeli, Doğru/Yanlış, Satranç, Fark Bul
+- 📱 Mobil uyumlu — Telefon tarayıcısından erişim
+- ☸️ Kubernetes — Otomatik ölçekleme, self-healing, rolling update
+- 🔄 Jenkins CI/CD — Otomatik build & deploy
+
+**Soru Bankası:** 68 soru, 11 farklı kategori (C++, Algoritmalar, Şampiyonlar Ligi, Satranç, Fark Bul vb.)
+
+| Teknoloji | Sürüm | Rol |
+|-----------|-------|-----|
+| Node.js | 20 LTS | Runtime |
+| Express.js | 4.18.x | HTTP sunucu |
+| Socket.io | 4.7.x | WebSocket iletişimi |
+| Docker | 29.x | Container |
+| Kubernetes | 1.31 | Orkestrasyon |
+| Jenkins | LTS | CI/CD Pipeline |
 
 ---
 
-## 🏗️ Uygulama Mimarisi
+<a id="uygulama-mimarisi"></a>
+
+## Uygulama Mimarisi
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -72,177 +84,132 @@
 │  │  (Telefon)   │               │         │        │   │
 │  └─────────────┘               │  ┌──────▼──────┐ │   │
 │                                 │  │  Oyun Motoru │ │   │
-│  ┌─────────────┐               │  │  (Game Logic)│ │   │
-│  │   Client     │ ────WS─────► │  └──────┬──────┘ │   │
-│  │  (Telefon)   │               │         │        │   │
-│  └─────────────┘               │  ┌──────▼──────┐ │   │
-│                                 │  │ Soru Bankası │ │   │
-│                                 │  │ (In-Memory + │ │   │
+│                                 │  │  (Game Logic)│ │   │
+│  ┌─────────────┐               │  └──────┬──────┘ │   │
+│  │   Client     │ ────WS─────► │         │        │   │
+│  │  (Telefon)   │               │  ┌──────▼──────┐ │   │
+│  └─────────────┘               │  │ Soru Bankası │ │   │
+│                                 │  │ (68 Soru +   │ │   │
 │                                 │  │  PV/PVC)     │ │   │
 │                                 │  └─────────────┘ │   │
 │                                 └──────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Kullanılan Teknolojiler
-
-| Teknoloji | Sürüm | Rol |
-|-----------|-------|-----|
-| **Node.js** | 20 LTS | Runtime |
-| **Express.js** | 4.18.x | HTTP sunucu, statik dosya servisi |
-| **Socket.io** | 4.7.x | Gerçek zamanlı WebSocket iletişimi |
-| **Docker** | 29.x | Container |
-| **Kubernetes** | 1.31 | Orkestrasyon |
-| **Jenkins** | LTS | CI/CD Pipeline |
-
 ---
 
-## ☸️ Kubernetes Mimarisi
+<a id="kubernetes-mimarisi"></a>
+
+## Kubernetes Mimarisi
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │              AKAMAI LKE KUBERNETES CLUSTER                    │
 │                                                              │
 │  ┌────────────────────────────────────────────────────────┐  │
-│  │                Namespace: clusterquiz                   │  │
+│  │                Namespace: trivia-node                   │  │
 │  │                                                        │  │
 │  │  ┌──────────────────────────────────────────────────┐  │  │
 │  │  │              Service (LoadBalancer)               │  │  │
 │  │  │          External IP: xxx.xxx.xxx.xxx             │  │  │
 │  │  │              Port 80 → 3000                       │  │  │
-│  │  │           SessionAffinity: ClientIP               │  │  │
-│  │  └──────────────┬───────────┬───────────┬───────────┘  │  │
-│  │                 │           │           │               │  │
-│  │         ┌───────▼──┐ ┌─────▼────┐ ┌────▼─────┐       │  │
-│  │         │  Pod 1   │ │  Pod 2   │ │  Pod 3   │       │  │
-│  │         │ cluster- │ │ cluster- │ │ cluster- │       │  │
-│  │         │ quiz:v10 │ │ quiz:v10 │ │ quiz:v10 │       │  │
-│  │         │ :3000    │ │ :3000    │ │ :3000    │       │  │
-│  │         └────┬─────┘ └────┬─────┘ └────┬─────┘       │  │
-│  │              │            │            │               │  │
-│  │         ┌────▼────────────▼────────────▼────┐         │  │
-│  │         │    PersistentVolumeClaim (10Gi)    │         │  │
-│  │         │    Linode Block Storage             │         │  │
-│  │         └───────────────────────────────────┘         │  │
+│  │  └──────────────────────┬───────────────────────────┘  │  │
+│  │                         │                               │  │
+│  │              ┌──────────▼──────────┐                   │  │
+│  │              │       Pod           │                   │  │
+│  │              │  ClusterQuiz:v10    │                   │  │
+│  │              │  Port: 3000         │                   │  │
+│  │              └──────────┬──────────┘                   │  │
+│  │                         │                               │  │
+│  │              ┌──────────▼──────────┐                   │  │
+│  │              │   PVC (10Gi)        │                   │  │
+│  │              │   Block Storage     │                   │  │
+│  │              └─────────────────────┘                   │  │
 │  │                                                        │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────┐  │  │
-│  │  │  ConfigMap   │  │NetworkPolicy │  │    HPA     │  │  │
-│  │  │  PORT=3000   │  │ Deny All +   │  │ Min:1      │  │  │
-│  │  │  ENV=prod    │  │ Allow :3000  │  │ Max:10     │  │  │
-│  │  └──────────────┘  └──────────────┘  │ CPU>70%    │  │  │
-│  │                                       └────────────┘  │  │
+│  │  ┌────────────┐  ┌──────────────┐  ┌────────────┐    │  │
+│  │  │ ConfigMap  │  │NetworkPolicy │  │    HPA     │    │  │
+│  │  │ PORT=3000  │  │ Deny All +   │  │ Min:1      │    │  │
+│  │  │ ENV=prod   │  │ Allow :3000  │  │ Max:10     │    │  │
+│  │  └────────────┘  └──────────────┘  └────────────┘    │  │
 │  └────────────────────────────────────────────────────────┘  │
-│                                                              │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐                  │
-│  │  Node 1  │  │  Node 2  │  │  Node 3  │  (Linode 2GB)   │
-│  └──────────┘  └──────────┘  └──────────┘                  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### Kubernetes Bileşenleri
-
 | Bileşen | Dosya | Açıklama |
 |---------|-------|----------|
-| **Namespace** | `k8s/namespace.yaml` | Tüm kaynakları izole eder |
-| **Deployment** | `k8s/deployment.yaml` | RollingUpdate, health probes |
-| **Service** | `k8s/service.yaml` | LoadBalancer tipi, dış dünyaya açar |
-| **PVC** | `k8s/pv-pvc.yaml` | 10Gi Linode Block Storage, kalıcı veri |
-| **NetworkPolicy** | `k8s/networkpolicy.yaml` | Default deny + allow port 3000 |
-| **HPA** | `k8s/hpa.yaml` | CPU/Memory bazlı otomatik ölçekleme |
-| **ConfigMap** | `k8s/configmap.yaml` | Ortam değişkenleri dışsallaştırma |
+| Namespace | `k8s/namespace.yaml` | Kaynakları izole eder |
+| Deployment | `k8s/deployment.yaml` | RollingUpdate, health probes |
+| Service | `k8s/service.yaml` | LoadBalancer, dış erişim |
+| PVC | `k8s/pv-pvc.yaml` | 10Gi kalıcı depolama |
+| NetworkPolicy | `k8s/networkpolicy.yaml` | Deny all + allow :3000 |
+| HPA | `k8s/hpa.yaml` | CPU bazlı ölçekleme |
+| ConfigMap | `k8s/configmap.yaml` | Ortam değişkenleri |
 
 ---
 
-## 🌐 Sistem Mimarisi
+<a id="sistem-mimarisi"></a>
+
+## Sistem Mimarisi
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                      SİSTEM MİMARİSİ                             │
-│                                                                  │
-│  ┌──────────┐     git push      ┌──────────────┐                │
-│  │Developer │ ─────────────────► │   GitHub     │                │
-│  │   PC     │                    │  Repository  │                │
-│  └──────────┘                    └──────┬───────┘                │
-│                                         │ webhook                │
-│                                         ▼                        │
-│                                  ┌──────────────┐                │
-│                                  │   Jenkins    │                │
-│                                  │   CI/CD      │                │
-│                                  └──────┬───────┘                │
-│                                         │                        │
-│                           ┌─────────────┼─────────────┐          │
-│                           │             │             │          │
-│                           ▼             ▼             ▼          │
-│                     ┌──────────┐  ┌──────────┐ ┌──────────┐     │
-│                     │  Build   │  │   Test   │ │  Push    │     │
-│                     │  Docker  │  │  Smoke   │ │ DockerHub│     │
-│                     │  Image   │  │  Test    │ │          │     │
-│                     └──────────┘  └──────────┘ └────┬─────┘     │
-│                                                      │           │
-│                                                      ▼           │
-│                                               ┌──────────────┐  │
-│                                               │  DockerHub   │  │
-│                                               │  Registry    │  │
-│                                               └──────┬───────┘  │
-│                                                      │           │
-│                                                kubectl apply     │
-│                                                      │           │
-│                                                      ▼           │
-│                                         ┌────────────────────┐  │
-│                                         │   Akamai LKE       │  │
-│                                         │   Kubernetes       │  │
-│                                         │   Cluster          │  │
-│                                         │                    │  │
-│  ┌──────────┐   HTTP    ┌──────────┐   │  ┌──┐ ┌──┐ ┌──┐  │  │
-│  │ Oyuncular│ ────────► │NodeBalan.│ ──►│  │P1│ │P2│ │P3│  │  │
-│  │(Telefon) │ ◄──────── │(LoadBal.)│ ◄──│  └──┘ └──┘ └──┘  │  │
-│  └──────────┘  WebSocket└──────────┘   │                    │  │
-│                                         └────────────────────┘  │
-└──────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                    SİSTEM MİMARİSİ                        │
+│                                                          │
+│  ┌──────────┐   git push   ┌──────────────┐             │
+│  │Developer │ ────────────►│   GitHub     │             │
+│  │   PC     │              │  Repository  │             │
+│  └──────────┘              └──────┬───────┘             │
+│                                   │ webhook             │
+│                                   ▼                     │
+│                            ┌──────────────┐             │
+│                            │   Jenkins    │             │
+│                            │   CI/CD      │             │
+│                            └──────┬───────┘             │
+│                                   │                     │
+│                    ┌──────────────┼──────────────┐      │
+│                    ▼              ▼              ▼      │
+│              ┌──────────┐  ┌──────────┐  ┌──────────┐  │
+│              │  Build   │  │  Test    │  │  Push    │  │
+│              │  Docker  │  │  Smoke   │  │ DockerHub│  │
+│              └──────────┘  └──────────┘  └────┬─────┘  │
+│                                                │        │
+│                                         kubectl apply   │
+│                                                │        │
+│                                                ▼        │
+│  ┌──────────┐  HTTP   ┌──────────┐  ┌────────────────┐ │
+│  │ Oyuncular│ ──────► │ LoadBal. │──│  Akamai LKE    │ │
+│  │(Telefon) │ ◄────── │          │◄─│  K8s Cluster   │ │
+│  └──────────┘ WebSocket└──────────┘  └────────────────┘ │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔄 CI/CD Pipeline Akışı
+<a id="cicd-pipeline-akışı"></a>
 
-Jenkins pipeline 7 aşamadan oluşur:
+## CI/CD Pipeline Akışı
 
 ```
-┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-│ 1.       │   │ 2.       │   │ 3.       │   │ 4.       │
-│ Checkout │──►│ Install  │──►│  Test    │──►│ Docker   │
-│ (GitHub) │   │ (npm ci) │   │ (Smoke)  │   │  Build   │
-└──────────┘   └──────────┘   └──────────┘   └────┬─────┘
-                                                    │
-┌──────────┐   ┌──────────┐   ┌──────────┐        │
-│ 7.       │   │ 6.       │   │ 5.       │        │
-│ Verify   │◄──│ Deploy   │◄──│ Docker   │◄───────┘
-│          │   │ (K8s)    │   │  Push    │
-└──────────┘   └──────────┘   └──────────┘
+Checkout ──► Install ──► Test ──► Docker Build ──► Docker Push ──► Deploy (K8s) ──► Verify
 ```
 
 | Aşama | Açıklama | Komut |
 |-------|----------|-------|
-| **Checkout** | GitHub'dan kodu çeker | `git clone` |
-| **Install** | Bağımlılıkları yükler | `npm ci` |
-| **Test** | Sunucu kontrolü | `curl localhost:3000` |
-| **Docker Build** | Container image oluşturur | `docker build -t clusterquiz:v10 .` |
-| **Docker Push** | Image'ı DockerHub'a gönderir | `docker push` |
-| **Deploy** | K8s manifestlerini uygular | `kubectl apply -f k8s/` |
-| **Verify** | Pod'ların çalıştığını doğrular | `kubectl rollout status` |
-
-### Jenkinsfile Konumu
-```
-Jenkinsfile
-```
+| Checkout | GitHub'dan kodu çeker | `git clone` |
+| Install | Bağımlılıkları yükler | `npm ci` |
+| Test | Sunucu kontrolü | `curl localhost:3000` |
+| Docker Build | Image oluşturur | `docker build -t huseyinkonak41/trivia-node:v10 .` |
+| Docker Push | DockerHub'a gönderir | `docker push huseyinkonak41/trivia-node:v10` |
+| Deploy | K8s'e uygular | `kubectl apply -f k8s/` |
+| Verify | Pod kontrolü | `kubectl rollout status` |
 
 ---
 
-## 📦 Deployment, Service, PV/PVC ve NetworkPolicy Kullanımı
+<a id="deployment-service-pvpvc-ve-networkpolicy"></a>
 
-### 1. Deployment (`k8s/deployment.yaml`)
+## Deployment, Service, PV/PVC ve NetworkPolicy
 
-Uygulamayı RollingUpdate stratejisi ile kesintisiz güncelleme sağlar.
+### Deployment (`k8s/deployment.yaml`)
 
 ```yaml
 spec:
@@ -255,15 +222,10 @@ spec:
   revisionHistoryLimit: 5   # Rollback için son 5 sürüm saklanır
 ```
 
-**Health Probes:**
-- **Liveness Probe:** Pod yanıt vermezse otomatik yeniden başlatılır (Self-Healing)
+- **Liveness Probe:** Pod yanıt vermezse otomatik yeniden başlatılır
 - **Readiness Probe:** Pod hazır olana kadar trafik yönlendirilmez
 
----
-
-### 2. Service (`k8s/service.yaml`)
-
-LoadBalancer tipi Service, Linode NodeBalancer oluşturarak dış dünyadan erişim sağlar.
+### Service (`k8s/service.yaml`)
 
 ```yaml
 spec:
@@ -274,259 +236,136 @@ spec:
   sessionAffinity: ClientIP  # WebSocket için aynı Pod'a yönlendir
 ```
 
----
-
-### 3. PersistentVolume / PVC (`k8s/pv-pvc.yaml`)
-
-Linode Block Storage kullanarak kalıcı veri depolama sağlar. Pod yeniden başlatıldığında veriler korunur.
+### PersistentVolumeClaim (`k8s/pv-pvc.yaml`)
 
 ```yaml
 spec:
-  accessModes:
-    - ReadWriteOnce
+  accessModes: [ReadWriteOnce]
   storageClassName: linode-block-storage-retain
   resources:
     requests:
       storage: 10Gi
 ```
 
-**Kullanım Amacı:** Oyun loglarının ve verilerin kalıcı depolanması.
-
----
-
-### 4. NetworkPolicy (`k8s/networkpolicy.yaml`)
-
-Güvenlik katmanı olarak ağ trafiğini kısıtlar.
+### NetworkPolicy (`k8s/networkpolicy.yaml`)
 
 | Kural | Açıklama |
 |-------|----------|
-| **Default Deny** | Tüm gelen trafik varsayılan olarak engellenir |
-| **Allow :3000** | Sadece 3000 portuna HTTP/WebSocket trafiğine izin |
-| **Allow DNS** | Kube-dns erişimi (port 53 UDP/TCP) |
-| **Allow HTTPS Egress** | Dış internet erişimi (443, 80 portları) |
+| Default Deny | Tüm gelen trafik engellenir |
+| Allow :3000 | Sadece uygulama portuna izin |
+| Allow DNS | Kube-dns erişimi (port 53) |
+| Allow Egress | Dış internet erişimi (443, 80) |
 
----
-
-### 5. HPA (`k8s/hpa.yaml`)
-
-Otomatik yatay ölçeklendirme.
+### HPA (`k8s/hpa.yaml`)
 
 ```yaml
 spec:
   minReplicas: 1
   maxReplicas: 10
   metrics:
-    - type: Resource
-      resource:
+    - resource:
         name: cpu
         target:
-          averageUtilization: 70    # CPU %70 aşarsa scale up
+          averageUtilization: 70
 ```
 
 ---
 
-## 🔄 Rolling Update, Rollback ve Ölçekleme Adımları
+<a id="rolling-update-rollback-ve-ölçekleme"></a>
 
-### Rolling Update (Kesintisiz Güncelleme)
+## Rolling Update, Rollback ve Ölçekleme
 
+### Rolling Update
 ```bash
-# 1. Yeni Docker image oluşturun
 docker build -t huseyinkonak41/trivia-node:v10 .
 docker push huseyinkonak41/trivia-node:v10
-
-# 2. Kubernetes'te güncelleme başlatın
-kubectl set image deployment/trivia-node \
-    trivia-node=huseyinkonak41/trivia-node:v10 \
-    -n trivia-node
-
-# 3. Güncelleme durumunu izleyin
-kubectl rollout status deployment/trivia-node -n trivia-node
-
-# 4. Pod'ların durumunu canlı izleyin
-kubectl get pods -n trivia-node -w
-```
-
-> **Önemli:** `maxUnavailable: 0` ayarı sayesinde güncelleme sırasında hiçbir Pod kapatılmaz. Önce yeni Pod açılır, hazır olduktan sonra eski Pod kapatılır.
-
-### Rollback (Geri Alma)
-
-```bash
-# Son sürüme geri dön
-kubectl rollout undo deployment/trivia-node -n trivia-node
-
-# Belirli bir sürüme geri dön
-kubectl rollout undo deployment/trivia-node --to-revision=2 -n trivia-node
-
-# Deployment geçmişini görüntüle
-kubectl rollout history deployment/trivia-node -n trivia-node
-```
-
-### Ölçekleme (Scaling)
-
-```bash
-# Manuel ölçekleme
-kubectl scale deployment trivia-node --replicas=5 -n trivia-node
-
-# HPA durumunu kontrol et
-kubectl get hpa -n trivia-node
-
-# Pod sayısını canlı izle
-kubectl get pods -n trivia-node -w
-```
-
----
-
-## 🚀 Hızlı Başlangıç
-
-### Yöntem 1: Node.js ile Yerel Çalıştırma
-
-```bash
-git clone https://github.com/keremyagmurr/Bulut-Bilisim-OrtakDepo.git
-cd Bulut-Bilisim-OrtakDepo
-npm install
-node server.js
-# → http://localhost:3000
-```
-
-### Yöntem 2: Docker ile Çalıştırma
-
-```bash
-docker build -t clusterquiz:latest .
-docker run -p 3000:3000 clusterquiz:latest
-# → http://localhost:3000
-```
-
-### Yöntem 3: Kubernetes (Akamai LKE) ile
-
-```bash
-# 1. Kubeconfig'i ayarla
-export KUBECONFIG=~/trivia-kubeconfig.yaml
-
-# 2. Tüm manifestleri uygula
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/configmap.yaml
-kubectl apply -f k8s/pv-pvc.yaml
-kubectl apply -f k8s/networkpolicy.yaml
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/hpa.yaml
-
-# 3. External IP'yi al
-kubectl get svc trivia-node-service -n trivia-node
-# → http://<EXTERNAL-IP>
-```
-
----
-
-## 🗂️ Proje Yapısı
-
-```
-ClusterQuiz/
-├── server.js                    # Ana sunucu + oyun mantığı (68 soru)
-├── public/
-│   └── index.html               # Tek sayfalık oyun arayüzü (Indigo/Purple tema)
-├── package.json                 # Node.js bağımlılıkları
-├── Dockerfile                   # Docker image tanımı
-├── .dockerignore                # Docker build hariç tutma
-├── docker-compose.yml           # Docker Compose yapılandırması
-├── Jenkinsfile                  # CI/CD pipeline tanımı
-├── k8s/                         # Kubernetes manifest dosyaları
-│   ├── namespace.yaml           #   └─ Namespace tanımı
-│   ├── configmap.yaml           #   └─ Ortam değişkenleri
-│   ├── deployment.yaml          #   └─ Deployment + RollingUpdate
-│   ├── service.yaml             #   └─ LoadBalancer Service
-│   ├── pv-pvc.yaml              #   └─ Kalıcı depolama (10Gi)
-│   ├── networkpolicy.yaml       #   └─ Ağ güvenlik politikası
-│   └── hpa.yaml                 #   └─ Otomatik ölçekleme
-├── jenkins/
-│   └── docker-compose.jenkins.yml
-└── README.md                    # Bu dosya
-```
-
----
-
-## 🎮 Oyun Nasıl Oynanır?
-
-1. Hoca tahtaya IP adresini yazar (örn: `http://<EXTERNAL-IP>`)
-2. Herkes telefonundan bu adrese girer
-3. Adını yazar ve "Katıl" butonuna basar
-4. Sunucu herkesi takımlara otomatik böler
-5. Her takımdan biri rastgele **Kaptan** seçilir
-
-### Puanlama
-
-| Durum | Puan |
-|-------|------|
-| Doğru cevap | +10 |
-| Yanlış cevap | -5 |
-| Süre doldu | -5 |
-
----
-
-## ⚙️ Soru Bankası
-
-**68 soru**, 11 farklı kategori:
-
-| Kategori | Soru Tipi |
-|----------|-----------|
-| C++ Programlama | Multi + Doğru/Yanlış |
-| Algoritmalar | Multi + Doğru/Yanlış |
-| Şampiyonlar Ligi | Multi + Doğru/Yanlış |
-| Makyaj & Güzellik | Multi + Doğru/Yanlış |
-| Türkçe Pop | Multi + Doğru/Yanlış |
-| İşletim Sistemleri | Multi + Doğru/Yanlış |
-| Genel Kültür | Multi + Doğru/Yanlış |
-| Bilim & Teknoloji | Multi + Doğru/Yanlış |
-| Bulut Bilişim | Multi + Doğru/Yanlış |
-| Satranç Bulmacaları | FEN tabanlı interaktif |
-| Fark Bul | Emoji grid karşılaştırma |
-
----
-
-## 🎪 Sunum Şovları
-
-### Şov 1: Self-Healing (Kaos Testi)
-```bash
-# Pod'u sil — Kubernetes anında yenisini oluşturur!
-kubectl delete pod <pod-adı> -n trivia-node
-kubectl get pods -n trivia-node -w
-```
-
-### Şov 2: Rolling Update
-```bash
-# Canlı güncelleme — Oyun hiç durmaz!
 kubectl set image deployment/trivia-node \
     trivia-node=huseyinkonak41/trivia-node:v10 -n trivia-node
 kubectl rollout status deployment/trivia-node -n trivia-node
 ```
 
+### Rollback
+```bash
+kubectl rollout undo deployment/trivia-node -n trivia-node
+kubectl rollout history deployment/trivia-node -n trivia-node
+```
+
+### Ölçekleme (Scaling)
+```bash
+kubectl scale deployment trivia-node --replicas=5 -n trivia-node
+kubectl get hpa -n trivia-node
+```
+
+---
+
+<a id="proje-yapısı"></a>
+
+## Proje Yapısı
+
+```
+ClusterQuiz/
+├── server.js                 # Ana sunucu + oyun mantığı (68 soru)
+├── public/
+│   └── index.html            # Oyun arayüzü (Indigo/Purple tema)
+├── package.json              # Node.js bağımlılıkları
+├── Dockerfile                # Docker image tanımı
+├── Jenkinsfile               # CI/CD pipeline tanımı
+├── k8s/                      # Kubernetes manifest dosyaları
+│   ├── namespace.yaml
+│   ├── configmap.yaml
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   ├── pv-pvc.yaml
+│   ├── networkpolicy.yaml
+│   └── hpa.yaml
+└── README.md
+```
+
+---
+
+<a id="sunum-şovları"></a>
+
+## Sunum Şovları
+
+### Şov 1: Self-Healing
+```bash
+kubectl delete pod <pod-adı> -n trivia-node
+kubectl get pods -n trivia-node -w
+# → Kubernetes silinen Pod'un yerine anında yenisini oluşturur
+```
+
+### Şov 2: Rolling Update
+```bash
+kubectl set image deployment/trivia-node \
+    trivia-node=huseyinkonak41/trivia-node:v10 -n trivia-node
+# → Oyun hiç durmadan güncellenir
+```
+
 ### Şov 3: Rollback
 ```bash
 kubectl rollout undo deployment/trivia-node -n trivia-node
+# → Bir önceki sürüme anında geri dönülür
 ```
 
 ### Şov 4: Scaling
 ```bash
 kubectl scale deployment trivia-node --replicas=5 -n trivia-node
 kubectl get pods -n trivia-node -w
+# → Pod sayısı anında artırılır
 ```
 
 ---
 
-## ⚠️ Kapatma Rehberi
+<a id="kapatma-rehberi"></a>
 
-> **ÖNEMLİ: Sunumdan sonra Akamai LKE cluster'ını silmeyi UNUTMAYIN!**
+## Kapatma Rehberi
 
-### Adımlar:
+> **Sunumdan sonra Akamai LKE cluster'ını silmeyi UNUTMAYIN!**
+
 1. [cloud.linode.com](https://cloud.linode.com) adresine gidin
-2. Sol menüden **Kubernetes** → Cluster'ı seçin → **Delete Cluster**
-3. **Volumes** bölümünden Block Storage'ları silin
-4. **NodeBalancers** bölümünden NodeBalancer'ı silin
-
-```bash
-# Tüm kaynakları silmek için:
-kubectl delete namespace trivia-node
-```
+2. **Kubernetes** → Cluster seçin → **Delete Cluster**
+3. **Volumes** → Kalan diskleri silin
+4. **NodeBalancers** → Kalan yönlendiricileri silin
 
 ---
 
