@@ -1,13 +1,25 @@
-# 🎮 Trivia Node: Kaptan'ın Seçimi
+# 🎮 ClusterQuiz — Gerçek Zamanlı Takım Bilgi Yarışması
 
-> **Gerçek zamanlı, sınıf içi takım quiz oyunu**  
+> **BSM Bulut Bilişim Final Projesi — 2026**  
 > Node.js + Socket.io + Docker + Kubernetes + Jenkins CI/CD  
 > Akamai (Linode) Kubernetes Engine üzerinde deploy edilmiştir.
 
-[![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/huseyinkonak41/trivia-node)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestrated-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
 [![Jenkins](https://img.shields.io/badge/Jenkins-CI%2FCD-D24939?logo=jenkins&logoColor=white)](https://www.jenkins.io/)
 [![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+
+---
+
+## 👥 Ekip
+
+| İsim | Rol | GitHub |
+|------|-----|--------|
+| **Hüseyin Konak** | Geliştirici & DevOps | [@huseyinkonak41](https://github.com/huseyinkonak41) |
+| **Kerem Yağmur** | Geliştirici & DevOps | [@keremyagmurr](https://github.com/keremyagmurr) |
+
+**GitHub Repo:** [Bulut-Bilisim-OrtakDepo](https://github.com/keremyagmurr/Bulut-Bilisim-OrtakDepo)  
+**Docker Hub:** [huseyinkonak41/trivia-node](https://hub.docker.com/r/huseyinkonak41/trivia-node)
 
 ---
 
@@ -18,8 +30,8 @@
 3. [Kubernetes Mimarisi](#-kubernetes-mimarisi)
 4. [Sistem Mimarisi](#-sistem-mimarisi)
 5. [CI/CD Pipeline Akışı](#-cicd-pipeline-akışı)
-6. [Deployment, Service, PV/PVC ve NetworkPolicy Kullanımı](#-deployment-service-pvpvc-ve-networkpolicy-kullanımı)
-7. [Rolling update, rollback ve ölçekleme adımları](#-rolling-update-rollback-ve-ölçekleme-adımları)
+6. [Deployment, Service, PV/PVC ve NetworkPolicy](#-deployment-service-pvpvc-ve-networkpolicy-kullanımı)
+7. [Rolling Update, Rollback ve Ölçekleme](#-rolling-update-rollback-ve-ölçekleme-adımları)
 8. [Hızlı Başlangıç](#-hızlı-başlangıç)
 9. [Proje Yapısı](#-proje-yapısı)
 10. [Soru Bankası](#-soru-bankası)
@@ -30,7 +42,7 @@
 
 ## 🎯 Proje Hakkında
 
-**Trivia Node: Kaptan'ın Seçimi**, sınıf ortamında öğrencilerin telefonlarından katılarak takım halinde yarıştığı gerçek zamanlı bir quiz oyunudur.
+**ClusterQuiz**, sınıf ortamında öğrencilerin telefonlarından katılarak takım halinde yarıştığı gerçek zamanlı bir bilgi yarışması oyunudur. Uygulama Docker ile containerize edilmiş ve Akamai (Linode) Kubernetes Engine üzerinde deploy edilmiştir.
 
 ### Temel Özellikler
 - 🎮 **Gerçek zamanlı oyun** — Socket.io ile anlık iletişim
@@ -92,7 +104,7 @@
 │              AKAMAI LKE KUBERNETES CLUSTER                    │
 │                                                              │
 │  ┌────────────────────────────────────────────────────────┐  │
-│  │                  Namespace: trivia-node                 │  │
+│  │                Namespace: clusterquiz                   │  │
 │  │                                                        │  │
 │  │  ┌──────────────────────────────────────────────────┐  │  │
 │  │  │              Service (LoadBalancer)               │  │  │
@@ -103,8 +115,8 @@
 │  │                 │           │           │               │  │
 │  │         ┌───────▼──┐ ┌─────▼────┐ ┌────▼─────┐       │  │
 │  │         │  Pod 1   │ │  Pod 2   │ │  Pod 3   │       │  │
-│  │         │ trivia-  │ │ trivia-  │ │ trivia-  │       │  │
-│  │         │ node:v1  │ │ node:v1  │ │ node:v1  │       │  │
+│  │         │ cluster- │ │ cluster- │ │ cluster- │       │  │
+│  │         │ quiz:v10 │ │ quiz:v10 │ │ quiz:v10 │       │  │
 │  │         │ :3000    │ │ :3000    │ │ :3000    │       │  │
 │  │         └────┬─────┘ └────┬─────┘ └────┬─────┘       │  │
 │  │              │            │            │               │  │
@@ -115,7 +127,7 @@
 │  │                                                        │  │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌────────────┐  │  │
 │  │  │  ConfigMap   │  │NetworkPolicy │  │    HPA     │  │  │
-│  │  │  PORT=3000   │  │ Deny All +   │  │ Min:2      │  │  │
+│  │  │  PORT=3000   │  │ Deny All +   │  │ Min:1      │  │  │
 │  │  │  ENV=prod    │  │ Allow :3000  │  │ Max:10     │  │  │
 │  │  └──────────────┘  └──────────────┘  │ CPU>70%    │  │  │
 │  │                                       └────────────┘  │  │
@@ -131,8 +143,8 @@
 
 | Bileşen | Dosya | Açıklama |
 |---------|-------|----------|
-| **Namespace** | `k8s/namespace.yaml` | Tüm kaynakları `trivia-node` namespace altında izole eder |
-| **Deployment** | `k8s/deployment.yaml` | 3 replica, RollingUpdate, health probes |
+| **Namespace** | `k8s/namespace.yaml` | Tüm kaynakları izole eder |
+| **Deployment** | `k8s/deployment.yaml` | RollingUpdate, health probes |
 | **Service** | `k8s/service.yaml` | LoadBalancer tipi, dış dünyaya açar |
 | **PVC** | `k8s/pv-pvc.yaml` | 10Gi Linode Block Storage, kalıcı veri |
 | **NetworkPolicy** | `k8s/networkpolicy.yaml` | Default deny + allow port 3000 |
@@ -212,16 +224,16 @@ Jenkins pipeline 7 aşamadan oluşur:
 | Aşama | Açıklama | Komut |
 |-------|----------|-------|
 | **Checkout** | GitHub'dan kodu çeker | `git clone` |
-| **Install** | Node.js bağımlılıklarını yükler | `npm ci` |
-| **Test** | Sunucu başlıyor mu kontrolü | `curl localhost:3000` |
-| **Docker Build** | Container image oluşturur | `docker build -t trivia-node:v1 .` |
+| **Install** | Bağımlılıkları yükler | `npm ci` |
+| **Test** | Sunucu kontrolü | `curl localhost:3000` |
+| **Docker Build** | Container image oluşturur | `docker build -t clusterquiz:v10 .` |
 | **Docker Push** | Image'ı DockerHub'a gönderir | `docker push` |
 | **Deploy** | K8s manifestlerini uygular | `kubectl apply -f k8s/` |
 | **Verify** | Pod'ların çalıştığını doğrular | `kubectl rollout status` |
 
 ### Jenkinsfile Konumu
 ```
-trivia-node/Jenkinsfile
+Jenkinsfile
 ```
 
 ---
@@ -230,11 +242,11 @@ trivia-node/Jenkinsfile
 
 ### 1. Deployment (`k8s/deployment.yaml`)
 
-Uygulamayı 3 replica olarak çalıştırır. RollingUpdate stratejisi ile kesintisiz güncelleme sağlar.
+Uygulamayı RollingUpdate stratejisi ile kesintisiz güncelleme sağlar.
 
 ```yaml
 spec:
-  replicas: 3
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -278,7 +290,7 @@ spec:
       storage: 10Gi
 ```
 
-**Kullanım Amacı:** Soru bankası verileri ve oyun loglarının kalıcı depolanması.
+**Kullanım Amacı:** Oyun loglarının ve verilerin kalıcı depolanması.
 
 ---
 
@@ -301,7 +313,7 @@ Otomatik yatay ölçeklendirme.
 
 ```yaml
 spec:
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 10
   metrics:
     - type: Resource
@@ -313,30 +325,28 @@ spec:
 
 ---
 
-## 🔄 Rolling update, rollback ve ölçekleme adımları
+## 🔄 Rolling Update, Rollback ve Ölçekleme Adımları
 
 ### Rolling Update (Kesintisiz Güncelleme)
 
 ```bash
-# 1. Kod değişikliği yapın (örn: server.js'de bir renk değiştirin)
+# 1. Yeni Docker image oluşturun
+docker build -t huseyinkonak41/trivia-node:v10 .
+docker push huseyinkonak41/trivia-node:v10
 
-# 2. Yeni Docker image oluşturun
-docker build -t huseyinkonak41/trivia-node:v2 .
-docker push huseyinkonak41/trivia-node:v2
-
-# 3. Kubernetes'te güncelleme başlatın
+# 2. Kubernetes'te güncelleme başlatın
 kubectl set image deployment/trivia-node \
-    trivia-node=huseyinkonak41/trivia-node:v2 \
+    trivia-node=huseyinkonak41/trivia-node:v10 \
     -n trivia-node
 
-# 4. Güncelleme durumunu izleyin
+# 3. Güncelleme durumunu izleyin
 kubectl rollout status deployment/trivia-node -n trivia-node
 
-# 5. Pod'ların durumunu canlı izleyin
+# 4. Pod'ların durumunu canlı izleyin
 kubectl get pods -n trivia-node -w
 ```
 
-> **Önemli:** `maxUnavailable: 0` ayarı sayesinde güncelleme sırasında **hiçbir Pod kapatılmaz**. Önce yeni Pod açılır, hazır olduktan sonra eski Pod kapatılır. Kullanıcılar hiçbir kesinti yaşamaz.
+> **Önemli:** `maxUnavailable: 0` ayarı sayesinde güncelleme sırasında hiçbir Pod kapatılmaz. Önce yeni Pod açılır, hazır olduktan sonra eski Pod kapatılır.
 
 ### Rollback (Geri Alma)
 
@@ -354,7 +364,7 @@ kubectl rollout history deployment/trivia-node -n trivia-node
 ### Ölçekleme (Scaling)
 
 ```bash
-# Manuel ölçekleme — 5 Pod'a çıkar
+# Manuel ölçekleme
 kubectl scale deployment trivia-node --replicas=5 -n trivia-node
 
 # HPA durumunu kontrol et
@@ -371,7 +381,8 @@ kubectl get pods -n trivia-node -w
 ### Yöntem 1: Node.js ile Yerel Çalıştırma
 
 ```bash
-cd trivia-node
+git clone https://github.com/keremyagmurr/Bulut-Bilisim-OrtakDepo.git
+cd Bulut-Bilisim-OrtakDepo
 npm install
 node server.js
 # → http://localhost:3000
@@ -380,25 +391,18 @@ node server.js
 ### Yöntem 2: Docker ile Çalıştırma
 
 ```bash
-docker build -t trivia-node:latest .
-docker run -p 3000:3000 trivia-node:latest
+docker build -t clusterquiz:latest .
+docker run -p 3000:3000 clusterquiz:latest
 # → http://localhost:3000
 ```
 
-### Yöntem 3: Docker Compose ile
-
-```bash
-docker-compose up -d
-# → http://localhost:3000
-```
-
-### Yöntem 4: Kubernetes (Akamai LKE) ile
+### Yöntem 3: Kubernetes (Akamai LKE) ile
 
 ```bash
 # 1. Kubeconfig'i ayarla
 export KUBECONFIG=~/trivia-kubeconfig.yaml
 
-# 2. Tüm manifesleri uygula
+# 2. Tüm manifestleri uygula
 kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/pv-pvc.yaml
@@ -417,26 +421,25 @@ kubectl get svc trivia-node-service -n trivia-node
 ## 🗂️ Proje Yapısı
 
 ```
-trivia-node/
-├── server.js                    # Ana sunucu + oyun mantığı
+ClusterQuiz/
+├── server.js                    # Ana sunucu + oyun mantığı (68 soru)
 ├── public/
-│   └── index.html               # Tek sayfalık oyun arayüzü
+│   └── index.html               # Tek sayfalık oyun arayüzü (Indigo/Purple tema)
 ├── package.json                 # Node.js bağımlılıkları
-├── Dockerfile                   # Multi-stage Docker image
+├── Dockerfile                   # Docker image tanımı
 ├── .dockerignore                # Docker build hariç tutma
 ├── docker-compose.yml           # Docker Compose yapılandırması
 ├── Jenkinsfile                  # CI/CD pipeline tanımı
 ├── k8s/                         # Kubernetes manifest dosyaları
 │   ├── namespace.yaml           #   └─ Namespace tanımı
 │   ├── configmap.yaml           #   └─ Ortam değişkenleri
-│   ├── deployment.yaml          #   └─ Deployment (3 replica)
+│   ├── deployment.yaml          #   └─ Deployment + RollingUpdate
 │   ├── service.yaml             #   └─ LoadBalancer Service
-│   ├── pv-pvc.yaml              #   └─ Kalıcı depolama
+│   ├── pv-pvc.yaml              #   └─ Kalıcı depolama (10Gi)
 │   ├── networkpolicy.yaml       #   └─ Ağ güvenlik politikası
 │   └── hpa.yaml                 #   └─ Otomatik ölçekleme
 ├── jenkins/
-│   └── docker-compose.jenkins.yml  # Jenkins yerel çalıştırma
-├── k8s-deployment.yaml          # (Eski) Tek dosya K8s yapılandırması
+│   └── docker-compose.jenkins.yml
 └── README.md                    # Bu dosya
 ```
 
@@ -444,17 +447,11 @@ trivia-node/
 
 ## 🎮 Oyun Nasıl Oynanır?
 
-### Oyuncular (Mobil)
 1. Hoca tahtaya IP adresini yazar (örn: `http://<EXTERNAL-IP>`)
 2. Herkes telefonundan bu adrese girer
 3. Adını yazar ve "Katıl" butonuna basar
 4. Sunucu herkesi takımlara otomatik böler
 5. Her takımdan biri rastgele **Kaptan** seçilir
-
-### Oyun Akışı
-```
-Lobi → Takım Atama → [ Kategori → Kaptan Seçer → Oyuncu Yanıtlar → Sonuç ] → ...
-```
 
 ### Puanlama
 
@@ -468,7 +465,7 @@ Lobi → Takım Atama → [ Kategori → Kaptan Seçer → Oyuncu Yanıtlar → 
 
 ## ⚙️ Soru Bankası
 
-**50+ soru**, 10 farklı kategori:
+**68 soru**, 11 farklı kategori:
 
 | Kategori | Soru Tipi |
 |----------|-----------|
@@ -481,20 +478,8 @@ Lobi → Takım Atama → [ Kategori → Kaptan Seçer → Oyuncu Yanıtlar → 
 | Genel Kültür | Multi + Doğru/Yanlış |
 | Bilim & Teknoloji | Multi + Doğru/Yanlış |
 | Bulut Bilişim | Multi + Doğru/Yanlış |
-| Satranç Bulmacaları | FEN tabanlı |
-| Fark Bul | Emoji grid |
-
-### Yeni Soru Eklemek
-```js
-{ 
-  category: "Kategori Adı", 
-  difficulty: "Kolay",  // Kolay | Orta | Orta Üstü | Zor
-  type: "multi",         // multi | truefalse | chess | spotdiff
-  question: "Soru metni?", 
-  options: ["A", "B", "C", "D"], 
-  answer: 2              // Doğru şık index (0-3)
-}
-```
+| Satranç Bulmacaları | FEN tabanlı interaktif |
+| Fark Bul | Emoji grid karşılaştırma |
 
 ---
 
@@ -511,67 +496,40 @@ kubectl get pods -n trivia-node -w
 ```bash
 # Canlı güncelleme — Oyun hiç durmaz!
 kubectl set image deployment/trivia-node \
-    trivia-node=huseyinkonak41/trivia-node:v2 -n trivia-node
+    trivia-node=huseyinkonak41/trivia-node:v10 -n trivia-node
 kubectl rollout status deployment/trivia-node -n trivia-node
 ```
 
 ### Şov 3: Rollback
 ```bash
-# Güncelleme geri alınır
 kubectl rollout undo deployment/trivia-node -n trivia-node
 ```
 
 ### Şov 4: Scaling
 ```bash
-# Pod sayısını artır
 kubectl scale deployment trivia-node --replicas=5 -n trivia-node
 kubectl get pods -n trivia-node -w
 ```
 
 ---
 
-## 📦 Bağımlılıklar
+## ⚠️ Kapatma Rehberi
 
-| Paket | Sürüm | Açıklama |
-|-------|-------|----------|
-| express | ^4.18.2 | HTTP sunucusu |
-| socket.io | ^4.7.2 | Gerçek zamanlı WebSocket |
+> **ÖNEMLİ: Sunumdan sonra Akamai LKE cluster'ını silmeyi UNUTMAYIN!**
 
-**Node.js 16+** gereklidir.
-
----
-
-## ⚠️ KAPATMA REHBERİ
-
-> **⚠️ ÖNEMLİ: Sunumdan sonra Akamai LKE cluster'ını silmeyi UNUTMAYIN!**
-> Aksi halde aylık ~$36 ücret kesilmeye devam eder.
-
-### Cluster Silme Adımları:
+### Adımlar:
 1. [cloud.linode.com](https://cloud.linode.com) adresine gidin
-2. Sol menüden **Kubernetes** seçin
-3. Cluster'ınızı seçin → **Delete Cluster** butonuna basın
-4. **Volumes** bölümünden kullanılmayan Block Storage'ları silin
-5. **NodeBalancers** bölümünden oluşturulan NodeBalancer'ı silin
+2. Sol menüden **Kubernetes** → Cluster'ı seçin → **Delete Cluster**
+3. **Volumes** bölümünden Block Storage'ları silin
+4. **NodeBalancers** bölümünden NodeBalancer'ı silin
 
-### Maliyet Kontrolü:
 ```bash
-# Cluster kaynaklarını kontrol edin
-kubectl get all -n trivia-node
-
-# Tüm kaynakları silmek için (cluster silmeden):
+# Tüm kaynakları silmek için:
 kubectl delete namespace trivia-node
 ```
 
 ---
 
-## 👥 Ekip
-
-| İsim | Rol |
-|------|-----|
-| Hüseyin Konak | Geliştirici |
-
----
-
 ## 📄 Lisans
 
-Bu proje eğitim amaçlıdır. BSM Final Projesi 2026.
+Bu proje eğitim amaçlıdır. BSM Bulut Bilişim Final Projesi — 2026.
