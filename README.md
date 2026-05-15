@@ -33,8 +33,8 @@
 6. [Deployment, Service, PV/PVC ve NetworkPolicy](#deployment-service-pvpvc-ve-networkpolicy)
 7. [Rolling Update, Rollback ve Ölçekleme](#rolling-update-rollback-ve-ölçekleme)
 8. [Proje Yapısı](#proje-yapısı)
-9. [Sunum Şovları](#sunum-şovları)
-10. [Kapatma Rehberi](#kapatma-rehberi)
+9. [Test ve Doğrulama](#test-ve-doğrulama)
+10. [Kaynak Yönetimi](#kaynak-yönetimi)
 
 ---
 
@@ -323,49 +323,53 @@ ClusterQuiz/
 
 ---
 
-<a id="sunum-şovları"></a>
+<a id="test-ve-doğrulama"></a>
 
-## Sunum Şovları
+## Test ve Doğrulama
 
-### Şov 1: Self-Healing
+Kubernetes özelliklerinin düzgün çalıştığını doğrulamak için aşağıdaki senaryolar uygulanabilir:
+
+### Self-Healing Testi
+Bir Pod silindiğinde Kubernetes'in otomatik olarak yeni bir Pod oluşturduğu gözlemlenir:
 ```bash
 kubectl delete pod <pod-adı> -n trivia-node
 kubectl get pods -n trivia-node -w
-# → Kubernetes silinen Pod'un yerine anında yenisini oluşturur
 ```
 
-### Şov 2: Rolling Update
+### Rolling Update Testi
+Yeni bir image ile güncelleme yapıldığında, eski Pod'lar kademeli olarak yenileriyle değiştirilir:
 ```bash
 kubectl set image deployment/trivia-node \
     trivia-node=huseyinkonak41/trivia-node:v10 -n trivia-node
-# → Oyun hiç durmadan güncellenir
+kubectl rollout status deployment/trivia-node -n trivia-node
 ```
 
-### Şov 3: Rollback
+### Rollback Testi
+Güncelleme sonrası sorun oluşursa önceki sürüme geri dönülebilir:
 ```bash
 kubectl rollout undo deployment/trivia-node -n trivia-node
-# → Bir önceki sürüme anında geri dönülür
 ```
 
-### Şov 4: Scaling
+### Scaling Testi
+Pod sayısı manuel olarak artırılıp HPA davranışı gözlemlenir:
 ```bash
 kubectl scale deployment trivia-node --replicas=5 -n trivia-node
 kubectl get pods -n trivia-node -w
-# → Pod sayısı anında artırılır
 ```
 
 ---
 
-<a id="kapatma-rehberi"></a>
+<a id="kaynak-yönetimi"></a>
 
-## Kapatma Rehberi
+## Kaynak Yönetimi
 
-> **Sunumdan sonra Akamai LKE cluster'ını silmeyi UNUTMAYIN!**
+Proje kullanılmadığı zamanlarda gereksiz maliyet oluşmaması için bulut kaynakları [cloud.linode.com](https://cloud.linode.com) panelinden kapatılabilir:
 
-1. [cloud.linode.com](https://cloud.linode.com) adresine gidin
-2. **Kubernetes** → Cluster seçin → **Delete Cluster**
-3. **Volumes** → Kalan diskleri silin
-4. **NodeBalancers** → Kalan yönlendiricileri silin
+- **Kubernetes** → Cluster → Delete Cluster
+- **Volumes** → Kullanılmayan diskleri sil
+- **NodeBalancers** → Kullanılmayan yönlendiricileri sil
+
+Kaynak silme işlemi veri kaybına yol açmaz; kodlar GitHub'da, Docker image'ları DockerHub'da saklanmaya devam eder. İhtiyaç halinde aynı manifest dosyaları ile cluster tekrar kurulabilir.
 
 ---
 
