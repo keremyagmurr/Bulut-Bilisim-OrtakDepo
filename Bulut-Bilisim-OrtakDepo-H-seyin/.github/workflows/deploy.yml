@@ -4,7 +4,7 @@ name: Trivia CI/CD Pipeline
 on:
   push:
     branches: [ "Kerem" ] # Eğer GitHub'daki ana dalının adı "master" ise burayı master yap
-
+  workflow_dispatch: # Sistemi elle tetikleyebilmek için eklediğimiz buton komutu
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest # GitHub'ın arka planda açacağı ücretsiz sunucu
