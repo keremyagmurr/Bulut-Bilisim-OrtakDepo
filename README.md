@@ -1,12 +1,12 @@
 # 🎮 ClusterQuiz — Gerçek Zamanlı Takım Bilgi Yarışması
 
 > **BSM Bulut Bilişim Final Projesi — 2026**  
-> Node.js + Socket.io + Docker + Kubernetes + Jenkins CI/CD  
+> Node.js + Socket.io + Docker + Kubernetes + GitHub Actions CI/CD  
 > Akamai (Linode) Kubernetes Engine üzerinde deploy edilmiştir.
 
 [![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/huseyinkonak41/trivia-node)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-Orchestrated-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
-[![Jenkins](https://img.shields.io/badge/Jenkins-CI%2FCD-D24939?logo=jenkins&logoColor=white)](https://www.jenkins.io/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions&logoColor=white)](https://github.com/keremyagmurr/Bulut-Bilisim-OrtakDepo/actions)
 [![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 
 ---
@@ -50,7 +50,7 @@
 - ♟️ Çoklu soru türü — Çoktan seçmeli, Doğru/Yanlış, Satranç, Fark Bul
 - 📱 Mobil uyumlu — Telefon tarayıcısından erişim
 - ☸️ Kubernetes — Otomatik ölçekleme, self-healing, rolling update
-- 🔄 Jenkins CI/CD — Otomatik build & deploy
+- 🔄 GitHub Actions CI/CD — Otomatik build & deploy
 
 **Soru Bankası:** 68 soru, 11 farklı kategori (C++, Algoritmalar, Şampiyonlar Ligi, Satranç, Fark Bul vb.)
 
@@ -61,7 +61,7 @@
 | Socket.io | 4.7.x | WebSocket iletişimi |
 | Docker | 29.x | Container |
 | Kubernetes | 1.31 | Orkestrasyon |
-| Jenkins | LTS | CI/CD Pipeline |
+| GitHub Actions | - | CI/CD Pipeline |
 
 ---
 
@@ -162,7 +162,7 @@
 │                                   │ webhook             │
 │                                   ▼                     │
 │                            ┌──────────────┐             │
-│                            │   Jenkins    │             │
+│                            │GitHub Actions│             │
 │                            │   CI/CD      │             │
 │                            └──────┬───────┘             │
 │                                   │                     │
@@ -187,7 +187,7 @@
 
 <a id="cicd-pipeline-akışı"></a>
 
-## CI/CD Pipeline Akışı
+## CI/CD Pipeline Akışı (GitHub Actions)
 
 ```
 Checkout ──► Install ──► Test ──► Docker Build ──► Docker Push ──► Deploy (K8s) ──► Verify
@@ -309,7 +309,7 @@ ClusterQuiz/
 │   └── index.html            # Oyun arayüzü (Indigo/Purple tema)
 ├── package.json              # Node.js bağımlılıkları
 ├── Dockerfile                # Docker image tanımı
-├── Jenkinsfile               # CI/CD pipeline tanımı
+├── .github/workflows/ci-cd.yml  # GitHub Actions CI/CD pipeline tanımı
 ├── k8s/                      # Kubernetes manifest dosyaları
 │   ├── namespace.yaml
 │   ├── configmap.yaml
