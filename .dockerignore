@@ -5,10 +5,7 @@ npm-debug.log*
 README.md
 docker-compose*.yml
 k8s/
-jenkins/
-Jenkinsfile
 .dockerignore
 *.md
 .env
 .env.*
-{public,src}
