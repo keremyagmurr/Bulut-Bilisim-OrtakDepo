@@ -28,8 +28,6 @@ COPY package*.json ./
 COPY server.js ./
 COPY public/ ./public/
 
-# Soru bankası dosyasını kopyala (varsa)
-COPY ornek_sorular*.json ./
 
 # Veri klasörü (PersistentVolume mount noktası)
 RUN mkdir -p /app/data && chown -R appuser:appgroup /app/data
