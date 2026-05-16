@@ -49,3 +49,36 @@ Proje dizininde imaj build edilerek uzak depoya gönderilir:
 docker login
 docker build -t keremyagmur/trivia-node:latest .
 docker push keremyagmur/trivia-node:latest
+
+### 2. Kubernetes Kümesinin Bağlantısı
+Akamai üzerinden 3 node'lu LKE kümesi oluşturulduktan sonra indirilen Kubeconfig dosyası PowerShell üzerinde tanımlanır:
+
+PowerShell
+cd Desktop\Bulut-Bilisim-OrtakDepo-H-seyin
+$env:KUBECONFIG="indirilen-kubeconfig-dosyasi.yaml"
+3. Altyapının Yayına Alınması
+Hazırlanan deklaratif manifest dosyası tek komutla kümeye uygulanır:
+
+PowerShell
+kubectl apply -f k8s-deployment.yaml
+### 4. Sistemin Doğrulanması
+Podların durumu ve atanan dış IP adresi kontrol edilir:
+
+PowerShell
+kubectl get pods
+kubectl get services
+trivia-node-service satırındaki EXTERNAL-IP adresi tarayıcıya yazılarak uygulamaya erişim sağlanır.
+
+### 🔬 Sistemin Test Edilmesi (Kanıtlar)
+Kendi Kendini İyileştirme (Self-Healing): kubectl delete pod <pod-adi> komutu ile manuel olarak bir pod silindiğinde, Kubernetes anında yeni bir pod oluşturarak sistemi 3 replikaya tamamlar.
+
+Kalıcı Depolama (Storage): kubectl describe pvc trivia-pvc komutu ile diskin başarıyla Bound (bağlı) durumunda olduğu teyit edilebilir.
+
+### 🧹 Maliyet Yönetimi ve Kapanış
+Kullanım sonrasında gereksiz bütçe harcamasını engellemek için Akamai paneli üzerinden sırasıyla şu bileşenler tamamen silinmelidir:
+
+Kubernetes Clusters: 3 sanal sunucunun kapatılması.
+
+Volumes: PVC tarafından otomatik oluşturulan 1GB diskin silinmesi.
+
+NodeBalancers: Trafik yönlendiricinin ve tahsis edilen dış IP'nin serbest bırakılması.
