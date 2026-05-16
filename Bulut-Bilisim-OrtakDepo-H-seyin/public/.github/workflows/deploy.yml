@@ -1,0 +1,43 @@
+name: Trivia CI/CD Pipeline
+
+# Bu otomasyon ne zaman çalışacak?
+on:
+  push:
+    branches: [ "Kerem" ] # Eğer GitHub'daki ana dalının adı "master" ise burayı master yap
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest # GitHub'ın arka planda açacağı ücretsiz sunucu
+
+    steps:
+    # 1. Adım: Kodları GitHub deposundan sanal sunucuya çek
+    - name: Kodu Cek (Checkout)
+      uses: actions/checkout@v3
+
+    # 2. Adım: Docker Hub'a verdiğimiz sırlarla giriş yap
+    - name: Docker Hub'a Giris
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    # 3. Adım: İmajı paketle ve Docker Hub'a gönder
+    - name: Docker Imajini Derle ve Pushla
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: keremyagmur/trivia-node:latest
+
+    # 4. Adım: Akamai Kubernetes kümemize bağlan
+    - name: Kubernetes Context Ayarla
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBECONFIG_DATA }}
+
+    # 5. Adım: Kümeye yeni mimariyi gönder ve eski podları yenileriyle değiştir (Rolling Update)
+    - name: Kubernetes'e Deploy Et
+      run: |
+        kubectl apply -f k8s-deployment.yaml
+        kubectl rollout restart deployment trivia-node
