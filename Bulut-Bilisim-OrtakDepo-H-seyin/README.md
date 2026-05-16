@@ -1,1 +1,0 @@
-# Bulut-Bilisim-OrtakDepo
