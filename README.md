@@ -13,10 +13,10 @@
 
 ## 👥 Ekip
 
-| İsim | Rol | GitHub |
-|------|-----|--------|
-| **Hüseyin Konak** | Geliştirici & DevOps | [@huseyinkonak41](https://github.com/huseyinkonak41) |
-| **Kerem Yağmur** | Geliştirici & DevOps | [@keremyagmurr](https://github.com/keremyagmurr) |
+| Öğrenci No | İsim | Rol | GitHub |
+|------------|------|-----|--------|
+| 22010310051 | **Hüseyin Konak** | Geliştirici & DevOps | [@huseyinkonak41](https://github.com/huseyinkonak41) |
+| 22010310076 | **Kerem Yağmur** | Geliştirici & DevOps | [@keremyagmurr](https://github.com/keremyagmurr) |
 
 **GitHub Repo:** [Bulut-Bilisim-OrtakDepo](https://github.com/keremyagmurr/Bulut-Bilisim-OrtakDepo)  
 **Docker Hub:** [huseyinkonak41/trivia-node](https://hub.docker.com/r/huseyinkonak41/trivia-node)
