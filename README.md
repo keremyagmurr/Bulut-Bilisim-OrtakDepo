@@ -5,7 +5,7 @@ Bu proje, Node.js ile geliştirilmiş dinamik bir Trivia (Bilgi Yarışması) we
 Proje, modern bulut bilişim standartlarına (High Availability, Auto-scaling, Self-healing, Network Isolation, Persistent Storage) tam uyumlu olarak tasarlanmıştır.
 
 ## 👤 Proje Sahibi
-* **Adı Soyadı:** Kerem Yağmur
+* **Adı Soyadı:** Kerem Yağmur, Hüseyin Konak
 * **Bölüm:** Bilgisayar Mühendisliği
 
 ---
