@@ -5,7 +5,10 @@ Bu proje, Node.js ile geliştirilmiş dinamik bir Trivia (Bilgi Yarışması) we
 Proje, modern bulut bilişim standartlarına (High Availability, Auto-scaling, Self-healing, Network Isolation, Persistent Storage) tam uyumlu olarak tasarlanmıştır.
 
 ## 👤 Proje Sahipleri
-* **İsim ve Soyisimleri:** Kerem Yağmur, Hüseyin Konak
+* **Ad, Soyad ve Numara:**
+* Kerem Yağmur 22010310076
+* Hüseyin Konak 22010310051
+* 
 * **Bölüm:** Bilgisayar Mühendisliği
 
 ---
@@ -13,7 +16,6 @@ Proje, modern bulut bilişim standartlarına (High Availability, Auto-scaling, S
 ## 🏗️ Sistem Mimarisi ve Kullanılan Teknolojiler
 
 Projenin genel mimarisi, uygulamanın bulut ortamında orkestre edilmesine dayanmaktadır:
-
 * **Uygulama Katmanı:** Node.js (Trivia web servisi)
 * **Konteynerlaştırma:** Docker
 * **İmaj Deposu (Registry):** Docker Hub (`keremyagmur/trivia-node`)
@@ -49,36 +51,41 @@ Proje dizininde imaj build edilerek uzak depoya gönderilir:
 docker login
 docker build -t keremyagmur/trivia-node:latest .
 docker push keremyagmur/trivia-node:latest
+```
 
 ### 2. Kubernetes Kümesinin Bağlantısı
-Akamai üzerinden 3 node'lu LKE kümesi oluşturulduktan sonra indirilen Kubeconfig dosyası PowerShell üzerinde tanımlanır:
-
-PowerShell
+Akamai üzerinden 3 node'lu LKE kümesi oluşturulduktan sonra indirilen `Kubeconfig` dosyası PowerShell üzerinde tanımlanır:
+```powershell
 cd Desktop\Bulut-Bilisim-OrtakDepo-H-seyin
 $env:KUBECONFIG="indirilen-kubeconfig-dosyasi.yaml"
-3. Altyapının Yayına Alınması
-Hazırlanan deklaratif manifest dosyası tek komutla kümeye uygulanır:
+```
 
-PowerShell
+### 3. Altyapının Yayına Alınması
+Hazırlanan deklaratif manifest dosyası tek komutla kümeye uygulanır:
+```powershell
 kubectl apply -f k8s-deployment.yaml
+```
+
 ### 4. Sistemin Doğrulanması
 Podların durumu ve atanan dış IP adresi kontrol edilir:
-
-PowerShell
+```powershell
 kubectl get pods
 kubectl get services
-trivia-node-service satırındaki EXTERNAL-IP adresi tarayıcıya yazılarak uygulamaya erişim sağlanır.
+```
+`trivia-node-service` satırındaki **EXTERNAL-IP** adresi tarayıcıya yazılarak uygulamaya erişim sağlanır.
 
-### 🔬 Sistemin Test Edilmesi (Kanıtlar)
-Kendi Kendini İyileştirme (Self-Healing): kubectl delete pod <pod-adi> komutu ile manuel olarak bir pod silindiğinde, Kubernetes anında yeni bir pod oluşturarak sistemi 3 replikaya tamamlar.
+---
 
-Kalıcı Depolama (Storage): kubectl describe pvc trivia-pvc komutu ile diskin başarıyla Bound (bağlı) durumunda olduğu teyit edilebilir.
+## 🔬 Sistemin Test Edilmesi (Kanıtlar)
 
-### 🧹 Maliyet Yönetimi ve Kapanış
+* **Kendi Kendini İyileştirme (Self-Healing):** `kubectl delete pod <pod-adi>` komutu ile manuel olarak bir pod silindiğinde, Kubernetes anında yeni bir pod oluşturarak sistemi 3 replikaya tamamlar.
+* **Kalıcı Depolama (Storage):** `kubectl describe pvc trivia-pvc` komutu ile diskin başarıyla `Bound` (bağlı) durumunda olduğu teyit edilebilir.
+
+---
+
+## 🧹 Maliyet Yönetimi ve Kapanış
+
 Kullanım sonrasında gereksiz bütçe harcamasını engellemek için Akamai paneli üzerinden sırasıyla şu bileşenler tamamen silinmelidir:
-
-Kubernetes Clusters: 3 sanal sunucunun kapatılması.
-
-Volumes: PVC tarafından otomatik oluşturulan 1GB diskin silinmesi.
-
-NodeBalancers: Trafik yönlendiricinin ve tahsis edilen dış IP'nin serbest bırakılması.
+1. **Kubernetes Clusters:** 3 sanal sunucunun kapatılması.
+2. **Volumes:** PVC tarafından otomatik oluşturulan 1GB diskin silinmesi.
+3. **NodeBalancers:** Trafik yönlendiricinin ve tahsis edilen dış IP'nin serbest bırakılması.
