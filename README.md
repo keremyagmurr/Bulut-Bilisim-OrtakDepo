@@ -8,7 +8,6 @@ Proje, modern bulut bilişim standartlarına (High Availability, Auto-scaling, S
 * **Ad, Soyad ve Numara:**
 * Kerem Yağmur 22010310076
 * Hüseyin Konak 22010310051
-* 
 * **Bölüm:** Bilgisayar Mühendisliği
 
 ---
