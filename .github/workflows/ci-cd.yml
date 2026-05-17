@@ -73,7 +73,6 @@ jobs:
 
       # ── Aşama 7: Kubernetes'e Deploy Et ─────────────────
       - name: ☸️ Kubernetes cluster'a deploy ediliyor
-        if: github.ref == 'refs/heads/main'
         run: |
           # kubeconfig dosyasını oluştur
           mkdir -p $HOME/.kube
