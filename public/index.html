@@ -994,12 +994,12 @@
 
     .chess-piece.white-piece {
       color: #fff;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 -1px 1px rgba(0,0,0,0.4), 1px 0 2px rgba(0,0,0,0.6), -1px 0 2px rgba(0,0,0,0.6);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 -1px 1px rgba(0, 0, 0, 0.4), 1px 0 2px rgba(0, 0, 0, 0.6), -1px 0 2px rgba(0, 0, 0, 0.6);
     }
 
     .chess-piece.black-piece {
       color: #111;
-      text-shadow: 0 1px 1px rgba(255,255,255,0.8), 0 -1px 1px rgba(255,255,255,0.4), 1px 0 1px rgba(255,255,255,0.6), -1px 0 1px rgba(255,255,255,0.6);
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8), 0 -1px 1px rgba(255, 255, 255, 0.4), 1px 0 1px rgba(255, 255, 255, 0.6), -1px 0 1px rgba(255, 255, 255, 0.6);
     }
 
     .chess-legend {
@@ -1097,7 +1097,7 @@
 
   <div class="app">
     <div class="header">
-      <h1>ClusterQuiz</h1>
+      <h1>ClusterQuiz v2</h1>
       <div class="sub">Gerçek zamanlı takım quiz oyunu</div>
     </div>
 
@@ -1352,13 +1352,15 @@
               kartına bırakın</b>. (Dolu takımlardaki oyuncuları <b>takas etmek için</b> isimleri direkt birbirinin
             üzerine sürükleyerek yer değiştirebilirsiniz)</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:stretch;">
-            <select id="teamFormatSelect" style="flex:1;padding:6px 10px;border-radius:6px;background:var(--surface);color:var(--text);border:1px solid var(--border);font-size:12px;outline:none;cursor:pointer;">
+            <select id="teamFormatSelect"
+              style="flex:1;padding:6px 10px;border-radius:6px;background:var(--surface);color:var(--text);border:1px solid var(--border);font-size:12px;outline:none;cursor:pointer;">
               <option value="solo">👤 Herkes Solo (Bireysel)</option>
               <option value="pairs">👤👤 İkili Takımlar</option>
               <option value="trio">👤👤👤 Üçlü Takımlar</option>
               <option value="quad">👤👤👤👤 Dörtlü Takımlar</option>
             </select>
-            <button class="btn btn-primary" style="font-size:12px;padding:6px 16px;" onclick="reformTeams(document.getElementById('teamFormatSelect').value)">
+            <button class="btn btn-primary" style="font-size:12px;padding:6px 16px;"
+              onclick="reformTeams(document.getElementById('teamFormatSelect').value)">
               ⚡ Dağıt
             </button>
             <button id="btnFreeMode" class="btn"
@@ -1366,15 +1368,19 @@
               onclick="createEmptyTeam()">➕ Boş Takım Ekle</button>
           </div>
 
-          <div class="muted small mb-12" style="font-size:11px;">💡 Çoklu Taşıma: İsteğe bağlı olarak birden fazla oyuncuyu seçip tek seferde bir takıma aktarabilirsiniz:</div>
-          <div id="bulkPlayerSelect" class="chip-list" style="margin-bottom:10px; background:var(--bg); padding:10px; border-radius:8px; max-height:150px; overflow-y:auto;">
-             <!-- Oyuncular buraya eklenecek -->
+          <div class="muted small mb-12" style="font-size:11px;">💡 Çoklu Taşıma: İsteğe bağlı olarak birden fazla
+            oyuncuyu seçip tek seferde bir takıma aktarabilirsiniz:</div>
+          <div id="bulkPlayerSelect" class="chip-list"
+            style="margin-bottom:10px; background:var(--bg); padding:10px; border-radius:8px; max-height:150px; overflow-y:auto;">
+            <!-- Oyuncular buraya eklenecek -->
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
-            <select id="manualTeamSelect" style="flex:1;padding:6px;border-radius:6px;background:var(--surface);color:var(--text);border:1px solid var(--border);font-size:12px;">
+            <select id="manualTeamSelect"
+              style="flex:1;padding:6px;border-radius:6px;background:var(--surface);color:var(--text);border:1px solid var(--border);font-size:12px;">
               <option value="">Hedef Takım Seç...</option>
             </select>
-            <button class="btn btn-primary" style="font-size:12px;padding:6px 12px;" onclick="bulkMovePlayers()">Seçilileri Taşı</button>
+            <button class="btn btn-primary" style="font-size:12px;padding:6px 12px;"
+              onclick="bulkMovePlayers()">Seçilileri Taşı</button>
           </div>
         </div>
 
@@ -1382,7 +1388,9 @@
           💡 Kaptanları değiştirmek için takım üyelerine tıklayın
         </div>
         <div style="display:flex; gap:10px;">
-          <button class="btn" style="flex:1; background:var(--surface); color:var(--text); border:1px solid var(--border);" onclick="backToLobby()">
+          <button class="btn"
+            style="flex:1; background:var(--surface); color:var(--text); border:1px solid var(--border);"
+            onclick="backToLobby()">
             🔙 Lobiye Dön
           </button>
           <button class="btn btn-primary btn-xl" style="flex:2;" onclick="sendQuestion()">
@@ -1407,7 +1415,8 @@
       <div class="host-controls">
         <div class="flex-between mb-12">
           <div class="host-badge">👑 Kontrol Paneli</div>
-          <div class="muted small"><span id="hostProgress">0</span>/<span id="hostTotal">0</span> <span id="hostProgressLabel">takım cevapladı</span></div>
+          <div class="muted small"><span id="hostProgress">0</span>/<span id="hostTotal">0</span> <span
+              id="hostProgressLabel">takım cevapladı</span></div>
         </div>
         <div class="progress-bar">
           <div class="progress-fill" id="hostProgressBar" style="width:0%"></div>
@@ -1415,8 +1424,10 @@
         <div id="hostStatusText" class="text-center mt-12" style="font-weight:600;font-size:15px;">
           Soru göndermeye hazır
         </div>
-        <div id="hostQuestionInfo" class="host-q-box" style="display:none; padding:0; background:transparent; border:none;">
-          <div style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:12px; border:1px solid var(--border);">
+        <div id="hostQuestionInfo" class="host-q-box"
+          style="display:none; padding:0; background:transparent; border:none;">
+          <div
+            style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:12px; border:1px solid var(--border);">
             <div class="muted small mb-12">Bu turun sorusu:</div>
             <div style="display:flex; flex-direction:column; gap:10px;">
               <div style="display:flex; align-items:center; gap:8px;">
@@ -1477,7 +1488,7 @@
         <div class="pick-list" id="captainPickList"></div>
       </div>
     </div>
-    
+
     <!-- ══════════════════════════════════════════════ -->
     <!-- SCREEN: GET READY (Solo Mode Wait)            -->
     <!-- ══════════════════════════════════════════════ -->
@@ -1488,7 +1499,8 @@
         <div class="muted mb-16">
           Sıradaki soru birazdan ekrana gelecek...
         </div>
-        <div style="background:var(--surface);border-radius:10px;padding:14px;margin-top:16px; border:1px solid var(--border); text-align:left;">
+        <div
+          style="background:var(--surface);border-radius:10px;padding:14px;margin-top:16px; border:1px solid var(--border); text-align:left;">
           <div class="muted small mb-12">Bu turun sorusu:</div>
           <div style="display:flex; flex-direction:column; gap:10px;">
             <div style="display:flex; align-items:center; gap:8px;">
@@ -1510,7 +1522,8 @@
     <!-- ══════════════════════════════════════════════ -->
     <div id="screen-question" class="screen">
       <div class="card">
-        <div style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:18px; border:1px solid var(--border);">
+        <div
+          style="background:var(--surface);border-radius:10px;padding:14px;margin-bottom:18px; border:1px solid var(--border);">
           <div class="muted small mb-12">Bu turun sorusu:</div>
           <div style="display:flex; flex-direction:column; gap:10px;">
             <div style="display:flex; align-items:center; gap:8px;">
@@ -2519,7 +2532,7 @@
 
         let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
         let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-        
+
         // 2B Grid oluşturalım
         const grid = [];
         rows.forEach(rowStr => {
@@ -2556,7 +2569,7 @@
                 </div>
                 <div class="chess-board">
         `;
-        
+
         grid.forEach((row, ri) => {
           row.forEach((ch, ci) => {
             const cls = (ri + ci) % 2 === 0 ? 'light' : 'dark';
@@ -2654,7 +2667,7 @@
     // ── Anında cevap geri bildirimi ──
     socket.on('answerAck', ({ isCorrect, points, correctAnswerIndex, timeTaken }) => {
       if (currentScreen !== 'question') return;
-      
+
       const banner = document.getElementById('qModeBanner');
       if (!banner) return;
 
@@ -2957,7 +2970,7 @@
     // Bulk Player Move Functions
     let selectedBulkPlayers = new Set();
     function toggleBulkPlayer(id, el) {
-      if(selectedBulkPlayers.has(id)) {
+      if (selectedBulkPlayers.has(id)) {
         selectedBulkPlayers.delete(id);
         el.style.border = "1px solid var(--border)";
         el.style.background = "var(--surface)";
@@ -2972,9 +2985,9 @@
 
     function bulkMovePlayers() {
       const toTeamId = document.getElementById('manualTeamSelect').value;
-      if(selectedBulkPlayers.size === 0) return notify('Önce taşınacak oyuncuları seçin!', 3000, 'error');
-      if(!toTeamId) return notify('Hedef takım seçin!', 3000, 'error');
-      
+      if (selectedBulkPlayers.size === 0) return notify('Önce taşınacak oyuncuları seçin!', 3000, 'error');
+      if (!toTeamId) return notify('Hedef takım seçin!', 3000, 'error');
+
       socket.emit('movePlayersBulk', { playerIds: Array.from(selectedBulkPlayers), toTeamId });
       selectedBulkPlayers.clear();
     }
