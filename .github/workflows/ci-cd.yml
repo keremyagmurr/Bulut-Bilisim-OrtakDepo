@@ -1,0 +1,125 @@
+# ============================================================
+# GitHub Actions — ClusterQuiz CI/CD Pipeline
+# GitHub Push → Build → Test → Docker Push → K8s Deploy
+# ============================================================
+
+name: ClusterQuiz CI/CD Pipeline
+
+# Tetikleyici: Hüseyin veya main branch'e kod push'landığında çalışır
+on:
+  push:
+    branches: [ "main", "Hüseyin" ]
+
+env:
+  DOCKER_IMAGE: huseyinkonak41/trivia-node
+  K8S_NAMESPACE: trivia-node
+
+jobs:
+  pipeline:
+    name: Build, Push & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Aşama 1: Kaynak Kodu Çek ────────────────────────
+      - name: 📥 Kaynak kodu GitHub'dan çekiliyor
+        uses: actions/checkout@v4
+
+      # ── Aşama 2: Node.js Ortamını Kur ──────────────────
+      - name: 📦 Node.js 20 kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── Aşama 3: Bağımlılıkları Yükle ──────────────────
+      - name: 📦 npm bağımlılıkları yükleniyor
+        run: npm ci --only=production
+
+      # ── Aşama 4: Smoke Test ─────────────────────────────
+      - name: 🧪 Uygulama smoke testi yapılıyor
+        run: |
+          # Sunucuyu arka planda başlat
+          node server.js &
+          SERVER_PID=$!
+
+          # Sunucunun hazır olmasını bekle
+          sleep 5
+
+          # HTTP isteği gönder
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/)
+
+          # Sunucuyu durdur
+          kill $SERVER_PID 2>/dev/null || true
+
+          # Sonucu kontrol et
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Smoke test başarılı! (HTTP $STATUS)"
+          else
+            echo "❌ Smoke test başarısız! (HTTP $STATUS)"
+            exit 1
+          fi
+
+      # ── Aşama 5: Docker Image Oluştur ──────────────────
+      - name: 🐳 Docker image oluşturuluyor
+        run: |
+          docker build -t $DOCKER_IMAGE:${{ github.run_number }} .
+          docker tag $DOCKER_IMAGE:${{ github.run_number }} $DOCKER_IMAGE:latest
+
+      # ── Aşama 6: DockerHub'a Gönder ─────────────────────
+      - name: 📤 Docker image DockerHub'a gönderiliyor
+        run: |
+          echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+          docker push $DOCKER_IMAGE:${{ github.run_number }}
+          docker push $DOCKER_IMAGE:latest
+
+      # ── Aşama 7: Kubernetes'e Deploy Et ─────────────────
+      - name: ☸️ Kubernetes cluster'a deploy ediliyor
+        run: |
+          # kubeconfig dosyasını oluştur
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+          # Namespace oluştur (yoksa)
+          kubectl apply -f k8s/namespace.yaml
+
+          # ConfigMap uygula
+          kubectl apply -f k8s/configmap.yaml
+
+          # PersistentVolumeClaim uygula
+          kubectl apply -f k8s/pv-pvc.yaml
+
+          # NetworkPolicy uygula
+          kubectl apply -f k8s/networkpolicy.yaml
+
+          # Deployment uygula (yeni image ile)
+          kubectl set image deployment/trivia-node \
+              trivia-node=$DOCKER_IMAGE:${{ github.run_number }} \
+              -n $K8S_NAMESPACE 2>/dev/null || \
+              kubectl apply -f k8s/deployment.yaml
+
+          # Service uygula
+          kubectl apply -f k8s/service.yaml
+
+          # HPA uygula
+          kubectl apply -f k8s/hpa.yaml
+
+      # ── Aşama 8: Deployment Doğrulama ──────────────────
+      - name: ✅ Deployment doğrulanıyor
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Rolling update tamamlanmasını bekle
+          kubectl rollout status deployment/trivia-node \
+              -n $K8S_NAMESPACE --timeout=120s
+
+          # Pod durumlarını göster
+          echo "=== Pod Durumları ==="
+          kubectl get pods -n $K8S_NAMESPACE
+
+          # Service durumunu göster
+          echo "=== Service Durumu ==="
+          kubectl get svc -n $K8S_NAMESPACE
+
+          # External IP göster
+          echo "=== External IP ==="
+          kubectl get svc trivia-node-service -n $K8S_NAMESPACE \
+              -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+          echo ""

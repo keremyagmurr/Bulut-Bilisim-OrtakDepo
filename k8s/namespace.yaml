@@ -1,0 +1,11 @@
+# ============================================================
+# Namespace: trivia-node
+# Tüm kaynakları izole bir namespace altında toplar
+# ============================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: trivia-node
+  labels:
+    app: trivia-node
+    project: cluster-quiz

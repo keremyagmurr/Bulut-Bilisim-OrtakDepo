@@ -1,0 +1,28 @@
+# ============================================================
+# Service: Trivia Node Yük Dengeleyici
+# LoadBalancer tipi — Linode NodeBalancer otomatik oluşturur
+# Dış dünyadan erişim için public IP atar
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: trivia-node-service
+  namespace: trivia-node
+  labels:
+    app: trivia-node
+  annotations:
+    # Linode NodeBalancer yapılandırması
+    service.beta.kubernetes.io/linode-loadbalancer-throttle: "20"
+spec:
+  type: LoadBalancer              # Linode otomatik NodeBalancer oluşturur
+  selector:
+    app: trivia-node
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80                    # Dışarıdan erişim portu
+      targetPort: 3000            # Container portu
+  sessionAffinity: ClientIP       # WebSocket bağlantıları için aynı Pod'a yönlendir
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600       # 1 saat boyunca aynı Pod'a bağlan
