@@ -1,6 +1,6 @@
 # ============================================================
 # Deployment: Trivia Node Uygulaması
-# - 1 Replica (Yüksek erişilebilirlik)
+# - 1 Replica (PVC ReadWriteOnce uyumluluğu için)
 # - RollingUpdate stratejisi (Kesintisiz güncelleme)
 # - revisionHistoryLimit: 5 (Rollback desteği)
 # - Liveness & Readiness Probes (Self-healing)
