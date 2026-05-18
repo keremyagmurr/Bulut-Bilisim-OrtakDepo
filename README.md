@@ -60,7 +60,7 @@
 | Express.js | 4.18.x | HTTP sunucu |
 | Socket.io | 4.7.x | WebSocket iletişimi |
 | Docker | 29.x | Container |
-| Kubernetes | 1.31 | Orkestrasyon |
+| Kubernetes | 1.35 | Orkestrasyon |
 | GitHub Actions | - | CI/CD Pipeline |
 
 ---
