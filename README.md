@@ -279,8 +279,8 @@ spec:
 ```bash
 docker build -t huseyinkonak41/trivia-node:v10 .
 docker push huseyinkonak41/trivia-node:v10
-kubectl set image deployment/trivia-node \
-    trivia-node=huseyinkonak41/trivia-node:v10 -n trivia-node
+# Not: Windows PowerShell kullananlar tek satırda yazmalıdır:
+kubectl set image deployment/trivia-node trivia-node=huseyinkonak41/trivia-node:v10 -n trivia-node
 kubectl rollout status deployment/trivia-node -n trivia-node
 ```
 
@@ -339,8 +339,8 @@ kubectl get pods -n trivia-node -w
 ### Rolling Update Testi
 Yeni bir image ile güncelleme yapıldığında, eski Pod'lar kademeli olarak yenileriyle değiştirilir:
 ```bash
-kubectl set image deployment/trivia-node \
-    trivia-node=huseyinkonak41/trivia-node:v10 -n trivia-node
+# Not: Windows PowerShell kullananlar komutu tek satırda yazmalıdır:
+kubectl set image deployment/trivia-node trivia-node=huseyinkonak41/trivia-node:v10 -n trivia-node
 kubectl rollout status deployment/trivia-node -n trivia-node
 ```
 
