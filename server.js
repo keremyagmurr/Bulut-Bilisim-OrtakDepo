@@ -462,10 +462,14 @@ function buildScoreboard() {
 }
 
 function getEligibleMembers(team) {
-  const membersData = team.members.map(pid => ({ id: pid, count: game.players[pid].answeredCount }));
+  let activeMembers = team.members.filter(pid => game.players[pid] && !game.players[pid].disconnected);
+  if (activeMembers.length === 0) {
+    activeMembers = team.members;
+  }
+  const membersData = activeMembers.map(pid => ({ id: pid, count: game.players[pid]?.answeredCount || 0 }));
   const minCount = Math.min(...membersData.map(m => m.count));
   return membersData.filter(m => m.count === minCount).map(m => ({
-    id: m.id, name: game.players[m.id].name
+    id: m.id, name: game.players[m.id]?.name || 'Oyuncu'
   }));
 }
 
@@ -496,8 +500,71 @@ io.on('connection', (socket) => {
 
   socket.on('joinGame', ({ name, roomCode }) => {
     if (!name || !name.trim() || !roomCode) return;
-    if (game.phase !== 'lobby') return socket.emit('error', { message: 'Lobi aktif değil.' });
     if (game.roomCode !== roomCode.trim()) return socket.emit('error', { message: '❌ Yanlış oda kodu!' });
+
+    // Geri bağlanmaya çalışan koptu durumundaki oyuncuyu kontrol et
+    const normalizedName = name.trim().toLowerCase();
+    const oldSocketId = Object.keys(game.players).find(id => {
+      const p = game.players[id];
+      return p.disconnected && p.name.trim().toLowerCase() === normalizedName;
+    });
+
+    if (oldSocketId) {
+      const player = game.players[oldSocketId];
+      player.disconnected = false;
+      
+      game.players[socket.id] = player;
+      delete game.players[oldSocketId];
+
+      if (player.teamId && game.teams[player.teamId]) {
+        const team = game.teams[player.teamId];
+        team.members = team.members.map(id => id === oldSocketId ? socket.id : id);
+        if (team.captain === oldSocketId) {
+          team.captain = socket.id;
+        }
+      }
+
+      if (game.host === oldSocketId) {
+        game.host = socket.id;
+      }
+
+      if (game.activeRound) {
+        const round = game.activeRound;
+        if (round.assignedPlayers[player.teamId] === oldSocketId) {
+          round.assignedPlayers[player.teamId] = socket.id;
+        }
+      }
+
+      socket.emit('joined', { name: player.name, isHost: player.isHost, roomCode: game.roomCode });
+      console.log(`🔌 Oyuncu/Host geri bağlandı: ${player.name} (${socket.id})`);
+
+      if (game.phase === 'active_round' && game.activeRound) {
+        const round = game.activeRound;
+        if (round.assignedPlayers[player.teamId] === socket.id) {
+          if (!round.answers[player.teamId]) {
+            const qData = {
+              question: round.question.question, options: round.question.options,
+              category: round.question.category, difficulty: round.question.difficulty,
+              timer: round.timerValue, type: round.question.type || 'multi',
+            };
+            if (round.question.fen) qData.fen = round.question.fen;
+            if (round.question.grid1) { qData.grid1 = round.question.grid1; qData.grid2 = round.question.grid2; }
+            socket.emit('yourQuestion', qData);
+          }
+        } else {
+          const assignedPid = round.assignedPlayers[player.teamId];
+          socket.emit('waitingFor', {
+            playerName: game.players[assignedPid]?.name || 'Takım Arkadaşın',
+            teamId: player.teamId, category: round.question.category, difficulty: round.question.difficulty,
+          });
+        }
+      }
+
+      io.emit('gameState', getPublicState());
+      return;
+    }
+
+    if (game.phase !== 'lobby') return socket.emit('error', { message: 'Lobi aktif değil.' });
 
     game.players[socket.id] = { name: name.trim(), teamId: null, isCaptain: false, isHost: false, score: 0, answeredCount: 0 };
     socket.emit('joined', { name: name.trim(), isHost: false, roomCode: game.roomCode });
@@ -1034,25 +1101,31 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     const player = game.players[socket.id];
     if (!player) return;
-    if (player.teamId && game.teams[player.teamId]) {
-      const team = game.teams[player.teamId];
-      team.members = team.members.filter(id => id !== socket.id);
-      if (team.captain === socket.id && team.members.length > 0) {
-        team.captain = team.members[0];
-        game.players[team.members[0]].isCaptain = true;
+
+    if (game.phase === 'lobby' || game.phase === 'idle') {
+      if (player.teamId && game.teams[player.teamId]) {
+        const team = game.teams[player.teamId];
+        team.members = team.members.filter(id => id !== socket.id);
+        if (team.captain === socket.id && team.members.length > 0) {
+          team.captain = team.members[0];
+          game.players[team.members[0]].isCaptain = true;
+        }
+        if (team.members.length === 0) delete game.teams[player.teamId];
       }
-      if (team.members.length === 0) delete game.teams[player.teamId];
-    }
-    if (game.host === socket.id) {
-      const others = Object.keys(game.players).filter(id => id !== socket.id);
-      if (others.length > 0) {
-        game.host = others[0];
-        game.players[others[0]].isHost = true;
-        io.to(others[0]).emit('youAreHost');
-        console.log(`👑 Host otomatik devredildi: ${game.players[others[0]].name}`);
+      if (game.host === socket.id) {
+        const others = Object.keys(game.players).filter(id => id !== socket.id);
+        if (others.length > 0) {
+          game.host = others[0];
+          game.players[others[0]].isHost = true;
+          io.to(others[0]).emit('youAreHost');
+          console.log(`👑 Host otomatik devredildi: ${game.players[others[0]].name}`);
+        }
       }
+      delete game.players[socket.id];
+    } else {
+      player.disconnected = true;
+      console.log(`🔌 Oyuncu/Host koptu (Geri bağlanabilir): ${player.name} (${socket.id})`);
     }
-    delete game.players[socket.id];
     io.emit('gameState', getPublicState());
   });
 });
