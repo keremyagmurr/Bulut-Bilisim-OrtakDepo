@@ -376,3 +376,4 @@ Kaynak silme işlemi veri kaybına yol açmaz; kodlar GitHub'da, Docker image'la
 ## 📄 Lisans
 
 Bu proje eğitim amaçlıdır. BSM Bulut Bilişim Final Projesi — 2026.
+ 
