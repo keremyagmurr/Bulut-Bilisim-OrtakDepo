@@ -359,9 +359,13 @@ function startCaptainPickTimer() {
         if (!round.assignedPlayers[teamId]) {
           const eligible = getEligibleMembers(team);
           const randomMember = eligible[Math.floor(Math.random() * eligible.length)];
-          assignPlayerForTeam(teamId, randomMember.id);
+          if (randomMember) {
+            round.assignedPlayers[teamId] = randomMember.id;
+            game.players[randomMember.id].answeredCount++;
+          }
         }
       });
+      startAnsweringPhase();
     }
   }, 1000);
 }
@@ -372,7 +376,32 @@ function startAnsweringPhase() {
   const round = game.activeRound;
   round.timerValue = round.timerMax = TIMERS[round.question.difficulty] || 25;
 
+  // Aktif olmayan/tüm üyeleri koptu olan takımlara anında timeout ver
   Object.entries(game.teams).forEach(([teamId, team]) => {
+    const activeMembers = team.members.filter(pid => game.players[pid] && !game.players[pid].disconnected);
+    if (activeMembers.length === 0) {
+      if (!round.answers[teamId]) {
+        const assignedPid = round.assignedPlayers[teamId] || team.members[0];
+        const playerName = game.players[assignedPid]?.name || 'Oyuncu';
+        round.answers[teamId] = {
+          isCorrect: false, points: -5, playerName: playerName,
+          teamScore: team.score, answerIndex: -1, status: 'timeout', timeTaken: round.timerMax
+        };
+        team.score = Math.max(0, team.score - 5);
+        console.log(`⚠️ ${teamId} takımı çevrimdışı olduğu için otomatik timeout kaydedildi.`);
+      }
+    }
+  });
+
+  // Eğer tüm takımlar çevrimdışıysa (veya hepsi timeout olduysa) doğrudan raundu değerlendir
+  if (Object.keys(round.answers).length >= Object.keys(game.teams).length) {
+    evaluateRound();
+    return;
+  }
+
+  Object.entries(game.teams).forEach(([teamId, team]) => {
+    if (round.answers[teamId]) return;
+
     const assignedPid = round.assignedPlayers[teamId];
     const qData = {
       question: round.question.question, options: round.question.options,
@@ -388,7 +417,7 @@ function startAnsweringPhase() {
     team.members.forEach(pid => {
       if (pid !== assignedPid) {
         io.to(pid).emit('waitingFor', {
-          playerName: game.players[assignedPid]?.name,
+          playerName: game.players[assignedPid]?.name || 'Takım Arkadaşın',
           teamId, category: round.question.category, difficulty: round.question.difficulty,
         });
       }
@@ -1098,6 +1127,79 @@ io.on('connection', (socket) => {
     console.log(`👑 Host devredildi: ${game.players[targetId].name}`);
   });
 
+function handleActiveGameDisconnect(socketId, player) {
+  const teamId = player.teamId;
+  if (!teamId || !game.teams[teamId]) return;
+
+  const team = game.teams[teamId];
+  const activeMembers = team.members.filter(pid => game.players[pid] && !game.players[pid].disconnected);
+
+  if (game.phase === 'captain_pick') {
+    if (team.captain === socketId) {
+      if (activeMembers.length > 0) {
+        team.captain = activeMembers[0];
+        game.players[activeMembers[0]].isCaptain = true;
+        console.log(`👑 Yeni kaptan atandı: ${game.players[activeMembers[0]].name}`);
+        
+        const round = game.activeRound;
+        if (round) {
+          const eligibleMembers = getEligibleMembers(team);
+          io.to(team.captain).emit('captainPick', {
+            category: round.question.category, difficulty: round.question.difficulty, timer: round.timerValue,
+            unansweredMembers: eligibleMembers
+          });
+        }
+      } else {
+        const round = game.activeRound;
+        if (round && !round.assignedPlayers[teamId]) {
+          const firstMember = team.members[0];
+          round.assignedPlayers[teamId] = firstMember;
+          game.players[firstMember].answeredCount++;
+        }
+      }
+    }
+  } else if (game.phase === 'active_round') {
+    const round = game.activeRound;
+    if (round && round.assignedPlayers[teamId] === socketId && !round.answers[teamId]) {
+      if (activeMembers.length > 0) {
+        const nextPlayerId = activeMembers[0];
+        round.assignedPlayers[teamId] = nextPlayerId;
+        
+        const qData = {
+          question: round.question.question, options: round.question.options,
+          category: round.question.category, difficulty: round.question.difficulty,
+          timer: round.timerValue, type: round.question.type || 'multi',
+        };
+        if (round.question.fen) qData.fen = round.question.fen;
+        if (round.question.grid1) { qData.grid1 = round.question.grid1; qData.grid2 = round.question.grid2; }
+        
+        io.to(nextPlayerId).emit('yourQuestion', qData);
+        console.log(`🎯 Cevaplama yetkisi ${player.name} koptuğu için ${game.players[nextPlayerId].name} oyuncusuna devredildi.`);
+        
+        team.members.forEach(pid => {
+          if (pid !== nextPlayerId) {
+            io.to(pid).emit('waitingFor', {
+              playerName: game.players[nextPlayerId]?.name || 'Takım Arkadaşın',
+              teamId, category: round.question.category, difficulty: round.question.difficulty,
+            });
+          }
+        });
+      } else {
+        console.log(`⚠️ ${teamId} takımında aktif oyuncu kalmadığı için otomatik timeout cevabı girildi.`);
+        round.answers[teamId] = {
+          isCorrect: false, points: -5, playerName: player.name,
+          teamScore: team.score, answerIndex: -1, status: 'timeout', timeTaken: round.timerMax
+        };
+        team.score = Math.max(0, team.score - 5);
+        
+        if (Object.keys(round.answers).length >= Object.keys(game.teams).length) {
+          evaluateRound();
+        }
+      }
+    }
+  }
+}
+
   socket.on('disconnect', () => {
     const player = game.players[socket.id];
     if (!player) return;
@@ -1125,6 +1227,7 @@ io.on('connection', (socket) => {
     } else {
       player.disconnected = true;
       console.log(`🔌 Oyuncu/Host koptu (Geri bağlanabilir): ${player.name} (${socket.id})`);
+      handleActiveGameDisconnect(socket.id, player);
     }
     io.emit('gameState', getPublicState());
   });
