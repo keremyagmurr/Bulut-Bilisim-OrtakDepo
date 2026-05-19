@@ -76,7 +76,10 @@ jobs:
         run: |
           # kubeconfig dosyasını oluştur
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" | tr -d ' \r\n' | base64 -d > $HOME/.kube/config
+          cat << 'EOF' > kubeconfig.b64
+          ${{ secrets.KUBECONFIG }}
+          EOF
+          tr -d ' \r\n' < kubeconfig.b64 | base64 -d > $HOME/.kube/config
 
           # Namespace oluştur (yoksa)
           kubectl apply -f k8s/namespace.yaml
