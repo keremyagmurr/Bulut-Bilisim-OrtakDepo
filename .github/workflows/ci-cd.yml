@@ -74,9 +74,17 @@ jobs:
       # ── Aşama 7: Kubernetes'e Deploy Et ─────────────────
       - name: ☸️ Kubernetes cluster'a deploy ediliyor
         run: |
-          # kubeconfig dosyasını oluştur
+          # kubeconfig dosyasını oluştur (Raw YAML veya Base64 otomatik tespit edilir)
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" | tr -d ' \r\n' | base64 -d > $HOME/.kube/config
+          SECRET_VAL="${{ secrets.KUBECONFIG }}"
+          
+          if [[ "$SECRET_VAL" == *"apiVersion:"* ]] || [[ "$SECRET_VAL" == *"clusters:"* ]]; then
+            echo "Tespit: KUBECONFIG secret değeri RAW YAML formatında. Doğrudan yazılıyor..."
+            printf '%s' "$SECRET_VAL" > $HOME/.kube/config
+          else
+            echo "Tespit: KUBECONFIG secret değeri BASE64 formatında. Çözülerek yazılıyor..."
+            printf '%s' "$SECRET_VAL" | tr -d ' \r\n' | base64 -d > $HOME/.kube/config
+          fi
 
           # Namespace oluştur (yoksa)
           kubectl apply -f k8s/namespace.yaml
