@@ -90,62 +90,86 @@ const QUESTIONS = [
   { category: "Bulut Bilişim", difficulty: "Zor", type: "multi", question: "Monolitik ile Mikroservis arasındaki temel fark nedir?", options: ["Dil farkı", "Bağımsız deploy ve ölçeklendirme", "Veritabanı türü", "Sunucu markası"], answer: 1 },
 
   // ─── ♟️ SATRANÇ BULMACALARI ───
-  { category: "Satranç", difficulty: "Kolay", type: "chess",
+  {
+    category: "Satranç", difficulty: "Kolay", type: "chess",
     question: "Beyaz oynar. 1 hamlede mat! En iyi hamle nedir?",
     fen: "6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1",
-    options: ["Re7 (Açmaz)", "Rg1 (Tehdit)", "Re8# (Mat!)", "Rf1 (Savunma)"], answer: 2 },
-  { category: "Satranç", difficulty: "Orta", type: "chess",
+    options: ["Re7 (Açmaz)", "Rg1 (Tehdit)", "Re8# (Mat!)", "Rf1 (Savunma)"], answer: 2
+  },
+  {
+    category: "Satranç", difficulty: "Orta", type: "chess",
     question: "Beyaz oynar. En iyi hamle hangisidir?",
     fen: "r1bqkbnr/pppppppp/2n5/4N3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
-    options: ["d4 (Gelişim)", "Nxc6 (Çatal!)", "Nf3 (Açmaz!)", "Bc4 (Tehdit!)"], answer: 1 },
-  { category: "Satranç", difficulty: "Kolay", type: "chess",
+    options: ["d4 (Gelişim)", "Nxc6 (Çatal!)", "Nf3 (Açmaz!)", "Bc4 (Tehdit!)"], answer: 1
+  },
+  {
+    category: "Satranç", difficulty: "Kolay", type: "chess",
     question: "Beyaz oynar. Aşağıdaki hamlelerden hangisi Şah Çeker?",
     fen: "rnbqkbnr/pppp1ppp/8/4p3/4PP2/8/PPPP2PP/RNBQKBNR w KQkq - 0 1",
-    options: ["Bc4+", "Nf3+", "d3+", "Qh5+"], answer: 3 },
-  { category: "Satranç", difficulty: "Orta", type: "chess",
+    options: ["Bc4+", "Nf3+", "d3+", "Qh5+"], answer: 3
+  },
+  {
+    category: "Satranç", difficulty: "Orta", type: "chess",
     question: "Beyaz oynar. En güçlü hamle nedir?",
     fen: "rnbqkb1r/pppp1ppp/5n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1",
-    options: ["Qf3 (Baskı!)", "Qxf7# (Mat!)", "Nc3 (Gelişim!)", "d3 (Savunma!)"], answer: 1 },
-  { category: "Satranç", difficulty: "Zor", type: "chess",
+    options: ["Qf3 (Baskı!)", "Qxf7# (Mat!)", "Nc3 (Gelişim!)", "d3 (Savunma!)"], answer: 1
+  },
+  {
+    category: "Satranç", difficulty: "Zor", type: "chess",
     question: "Beyaz oynar. Hangi hamle hem Kaleyi hem Şahı tehdit eder?",
     fen: "r3k2r/ppp2ppp/2n1bn2/3pp3/2B1P3/3P1N2/PPP2PPP/R1BQK2R w KQkq - 0 1",
-    options: ["Bg5+ (Çatal!)", "a3+ (Çatal!)", "O-O+ (Çatal!)", "Bxf7+ (Çatal!)"], answer: 3 },
-  { category: "Satranç", difficulty: "Kolay", type: "chess",
+    options: ["Bg5+ (Çatal!)", "a3+ (Çatal!)", "O-O+ (Çatal!)", "Bxf7+ (Çatal!)"], answer: 3
+  },
+  {
+    category: "Satranç", difficulty: "Kolay", type: "chess",
     question: "Beyaz oynar. 1 hamlede mat! Hangi hamle mat eder?",
     fen: "k7/8/1K6/8/8/8/8/7R w - - 0 1",
-    options: ["Rh7 (Şah!)", "Kb6 (Hamle!)", "Rh8# (Mat!)", "Ka6 (Savunma!)"], answer: 2 },
+    options: ["Rh7 (Şah!)", "Kb6 (Hamle!)", "Rh8# (Mat!)", "Ka6 (Savunma!)"], answer: 2
+  },
 
   // ─── 🔍 FARK BUL ───
-  { category: "Fark Bul", difficulty: "Kolay", type: "spotdiff",
+  {
+    category: "Fark Bul", difficulty: "Kolay", type: "spotdiff",
     question: "İki tablo arasındaki farklı emojiyi bulun!",
-    grid1: ["🍎","🍊","🍋","🍇","🍉","🍓","🍑","🍒","🫐"],
-    grid2: ["🍎","🍊","🍋","🍇","🍉","🍓","🍑","🍌","🫐"],
-    options: ["Satır 1 Sütun 3 (🍋→🍍)", "Satır 3 Sütun 2 (🍒→🍌)", "Satır 2 Sütun 1 (🍇→🍉)", "Satır 3 Sütun 3 (🫐→🍇)"], answer: 1 },
-  { category: "Fark Bul", difficulty: "Kolay", type: "spotdiff",
+    grid1: ["🍎", "🍊", "🍋", "🍇", "🍉", "🍓", "🍑", "🍒", "🫐"],
+    grid2: ["🍎", "🍊", "🍋", "🍇", "🍉", "🍓", "🍑", "🍌", "🫐"],
+    options: ["Satır 1 Sütun 3 (🍋→🍍)", "Satır 3 Sütun 2 (🍒→🍌)", "Satır 2 Sütun 1 (🍇→🍉)", "Satır 3 Sütun 3 (🫐→🍇)"], answer: 1
+  },
+  {
+    category: "Fark Bul", difficulty: "Kolay", type: "spotdiff",
     question: "Hangi emoji değişmiş?",
-    grid1: ["⭐","🌙","☀️","🌈","⚡","❄️","🔥","💧","🌊"],
-    grid2: ["⭐","🌙","☀️","🌈","🌟","❄️","🔥","💧","🌊"],
-    options: ["Satır 1 Sütun 1 (⭐→✨)", "Satır 3 Sütun 1 (🔥→🌋)", "Satır 2 Sütun 2 (⚡→🌟)", "Satır 1 Sütun 3 (☀️→🌞)"], answer: 2 },
-  { category: "Fark Bul", difficulty: "Orta", type: "spotdiff",
+    grid1: ["⭐", "🌙", "☀️", "🌈", "⚡", "❄️", "🔥", "💧", "🌊"],
+    grid2: ["⭐", "🌙", "☀️", "🌈", "🌟", "❄️", "🔥", "💧", "🌊"],
+    options: ["Satır 1 Sütun 1 (⭐→✨)", "Satır 3 Sütun 1 (🔥→🌋)", "Satır 2 Sütun 2 (⚡→🌟)", "Satır 1 Sütun 3 (☀️→🌞)"], answer: 2
+  },
+  {
+    category: "Fark Bul", difficulty: "Orta", type: "spotdiff",
     question: "Dikkatli bakın! Hangi hücre farklı?",
-    grid1: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈"],
-    grid2: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐲","🐵","🙈"],
-    options: ["Satır 2 Sütun 3 (🐻→🐼)", "Satır 3 Sütun 1 (🐨→🐻)", "Satır 1 Sütun 4 (🐹→🐭)", "Satır 4 Sütun 2 (🐸→🐲)"], answer: 3 },
-  { category: "Fark Bul", difficulty: "Orta", type: "spotdiff",
+    grid1: ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🙈"],
+    grid2: ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐲", "🐵", "🙈"],
+    options: ["Satır 2 Sütun 3 (🐻→🐼)", "Satır 3 Sütun 1 (🐨→🐻)", "Satır 1 Sütun 4 (🐹→🐭)", "Satır 4 Sütun 2 (🐸→🐲)"], answer: 3
+  },
+  {
+    category: "Fark Bul", difficulty: "Orta", type: "spotdiff",
     question: "Bir şey değişti! Hangisi?",
-    grid1: ["🏠","🏢","🏥","🏫","🏪","🏭","🏗️","🏛️","🏟️"],
-    grid2: ["🏠","🏢","🏥","🏫","🏪","🏭","🏗️","⛪","🏟️"],
-    options: ["Satır 3 Sütun 2 (🏛️→⛪)", "Satır 1 Sütun 2 (🏢→🏨)", "Satır 2 Sütun 3 (🏭→🏪)", "Satır 3 Sütun 3 (🏟️→🏰)"], answer: 0 },
-  { category: "Fark Bul", difficulty: "Zor", type: "spotdiff",
+    grid1: ["🏠", "🏢", "🏥", "🏫", "🏪", "🏭", "🏗️", "🏛️", "🏟️"],
+    grid2: ["🏠", "🏢", "🏥", "🏫", "🏪", "🏭", "🏗️", "⛪", "🏟️"],
+    options: ["Satır 3 Sütun 2 (🏛️→⛪)", "Satır 1 Sütun 2 (🏢→🏨)", "Satır 2 Sütun 3 (🏭→🏪)", "Satır 3 Sütun 3 (🏟️→🏰)"], answer: 0
+  },
+  {
+    category: "Fark Bul", difficulty: "Zor", type: "spotdiff",
     question: "25 emojide TEK fark! Bulabilir misiniz?",
-    grid1: ["🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟤","🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟤","🔴","🟠","🟡","🟢","🔵","🟣","⚫"],
-    grid2: ["🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟤","🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟤","🔴","🟠","🟡","🟢","🟤","🟣","⚫"],
-    options: ["Satır 2 Sütun 4 (🔵→🟣)", "Satır 5 Sütun 3 (🔵→🟤)", "Satır 3 Sütun 1 (⚫→⚪)", "Satır 4 Sütun 5 (⚫→🔴)"], answer: 1 },
-  { category: "Fark Bul", difficulty: "Kolay", type: "spotdiff",
+    grid1: ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "⚫", "⚪", "🟤", "🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "⚫", "⚪", "🟤", "🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "⚫"],
+    grid2: ["🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "⚫", "⚪", "🟤", "🔴", "🟠", "🟡", "🟢", "🔵", "🟣", "⚫", "⚪", "🟤", "🔴", "🟠", "🟡", "🟢", "🟤", "🟣", "⚫"],
+    options: ["Satır 2 Sütun 4 (🔵→🟣)", "Satır 5 Sütun 3 (🔵→🟤)", "Satır 3 Sütun 1 (⚫→⚪)", "Satır 4 Sütun 5 (⚫→🔴)"], answer: 1
+  },
+  {
+    category: "Fark Bul", difficulty: "Kolay", type: "spotdiff",
     question: "İki tablo arasındaki farklı olan yiyeceği bulun!",
-    grid1: ["🍕","🍔","🍟","🌭","🍿","🥓","🥚","🍞","🥐"],
-    grid2: ["🍕","🍔","🍟","🌭","🍿","🥓","🥚","🥖","🥐"],
-    options: ["Satır 1 Sütun 2 (🍔→🍟)", "Satır 2 Sütun 1 (🌭→🥓)", "Satır 3 Sütun 2 (🍞→🥖)", "Satır 1 Sütun 1 (🍕→🍔)"], answer: 2 },
+    grid1: ["🍕", "🍔", "🍟", "🌭", "🍿", "🥓", "🥚", "🍞", "🥐"],
+    grid2: ["🍕", "🍔", "🍟", "🌭", "🍿", "🥓", "🥚", "🥖", "🥐"],
+    options: ["Satır 1 Sütun 2 (🍔→🍟)", "Satır 2 Sütun 1 (🌭→🥓)", "Satır 3 Sütun 2 (🍞→🥖)", "Satır 1 Sütun 1 (🍕→🍔)"], answer: 2
+  },
 ];
 
 // ─── OYUN DURUMU ─────────────────────────────────────────────────────────────
@@ -265,13 +289,13 @@ function getRandomQuestion() {
     available = [...QUESTIONS];
     lastCategory = null;
   }
-  
+
   // Aynı kategoriden arka arkaya gelmesin
   if (lastCategory && available.length > 1) {
     const diffCat = available.filter(q => q.category !== lastCategory);
     if (diffCat.length > 0) available = diffCat;
   }
-  
+
   // Fisher-Yates ile gerçek rastgele seç
   const idx = Math.floor(Math.random() * available.length);
   const q = available[idx];
@@ -509,7 +533,7 @@ io.on('connection', (socket) => {
 
   socket.on('createGame', ({ name, questionCount }) => {
     if (!name || !name.trim()) return;
-    
+
     // Eğer önceden yarım kalmış veya takılmış bir oyun varsa, hata vermek yerine oyunu sıfırla ve yeni oyun kur.
     if (game.phase !== 'idle') {
       console.log('⚠️ Önceki aktif oyun zorla sıfırlandı. Yeni oyun kuruluyor...');
@@ -541,7 +565,7 @@ io.on('connection', (socket) => {
     if (oldSocketId) {
       const player = game.players[oldSocketId];
       player.disconnected = false;
-      
+
       game.players[socket.id] = player;
       delete game.players[oldSocketId];
 
@@ -631,7 +655,7 @@ io.on('connection', (socket) => {
     if (!data || !data.question || !data.options || !data.category || !data.difficulty || data.answer === undefined) {
       return socket.emit('error', { message: 'Eksik soru bilgisi!' });
     }
-    
+
     const newQ = {
       category: data.category.trim(),
       difficulty: data.difficulty,
@@ -640,7 +664,7 @@ io.on('connection', (socket) => {
       options: data.options.map(o => o.trim()),
       answer: parseInt(data.answer),
     };
-    
+
     // Satranç sorusu ise FEN ekle
     if (data.type === 'chess' && data.fen) {
       newQ.fen = data.fen.trim();
@@ -650,7 +674,7 @@ io.on('connection', (socket) => {
       newQ.grid1 = data.grid1;
       newQ.grid2 = data.grid2;
     }
-    
+
     QUESTIONS.push(newQ);
     socket.emit('questionAdded', { total: QUESTIONS.length, question: newQ.question.substring(0, 50) });
     console.log(`📝 Yeni soru eklendi! Toplam: ${QUESTIONS.length} | Kategori: ${newQ.category}`);
@@ -707,7 +731,7 @@ io.on('connection', (socket) => {
     if (!data || !data.question || !data.options || !data.category || !data.difficulty || data.answer === undefined) {
       return socket.emit('error', { message: 'Eksik soru bilgisi!' });
     }
-    
+
     QUESTIONS[index] = {
       category: data.category.trim(),
       difficulty: data.difficulty,
@@ -718,7 +742,7 @@ io.on('connection', (socket) => {
     };
     if (data.fen) QUESTIONS[index].fen = data.fen.trim();
     if (data.grid1) { QUESTIONS[index].grid1 = data.grid1; QUESTIONS[index].grid2 = data.grid2; }
-    
+
     socket.emit('questionUpdated', { index, question: data.question.substring(0, 50) });
     console.log(`✏️ Soru güncellendi [${index}]: "${data.question.substring(0, 40)}..."`);
     // Güncel listeyi gönder
@@ -804,7 +828,7 @@ io.on('connection', (socket) => {
       if (!player) return;
       const fromTeamId = player.teamId;
       if (fromTeamId === toTeamId) return;
-      
+
       const fromTeam = game.teams[fromTeamId];
       if (!fromTeam) return;
 
@@ -825,10 +849,10 @@ io.on('connection', (socket) => {
 
     // Yeni gelenlerden veya eskilerden kaptan ayarlaması
     if (toTeam.members.length === playerIds.length && playerIds.length > 0) {
-        toTeam.captain = playerIds[0];
-        playerIds.forEach(pid => game.players[pid].isCaptain = (pid === playerIds[0]));
+      toTeam.captain = playerIds[0];
+      playerIds.forEach(pid => game.players[pid].isCaptain = (pid === playerIds[0]));
     } else {
-        playerIds.forEach(pid => game.players[pid].isCaptain = false);
+      playerIds.forEach(pid => game.players[pid].isCaptain = false);
     }
 
     io.emit('gameState', getPublicState());
@@ -1004,10 +1028,10 @@ io.on('connection', (socket) => {
         game.activeRound.assignedPlayers[teamId] = pid;
         game.players[pid].answeredCount++;
       });
-      
+
       io.emit('getReady', { category: q.category, difficulty: q.difficulty, timer: 5 });
       io.emit('gameState', getPublicState());
-      
+
       clearTimer();
       const round = game.activeRound;
       round.timerValue = 5;
@@ -1116,89 +1140,89 @@ io.on('connection', (socket) => {
   socket.on('transferHost', ({ targetId }) => {
     if (socket.id !== game.host) return;
     if (!game.players[targetId]) return;
-    
+
     game.players[socket.id].isHost = false;
     game.host = targetId;
     game.players[targetId].isHost = true;
-    
+
     socket.emit('hostTransferred');
     io.to(targetId).emit('youAreHost');
     io.emit('gameState', getPublicState());
     console.log(`👑 Host devredildi: ${game.players[targetId].name}`);
   });
 
-function handleActiveGameDisconnect(socketId, player) {
-  const teamId = player.teamId;
-  if (!teamId || !game.teams[teamId]) return;
+  function handleActiveGameDisconnect(socketId, player) {
+    const teamId = player.teamId;
+    if (!teamId || !game.teams[teamId]) return;
 
-  const team = game.teams[teamId];
-  const activeMembers = team.members.filter(pid => game.players[pid] && !game.players[pid].disconnected);
+    const team = game.teams[teamId];
+    const activeMembers = team.members.filter(pid => game.players[pid] && !game.players[pid].disconnected);
 
-  if (game.phase === 'captain_pick') {
-    if (team.captain === socketId) {
-      if (activeMembers.length > 0) {
-        team.captain = activeMembers[0];
-        game.players[activeMembers[0]].isCaptain = true;
-        console.log(`👑 Yeni kaptan atandı: ${game.players[activeMembers[0]].name}`);
-        
-        const round = game.activeRound;
-        if (round) {
-          const eligibleMembers = getEligibleMembers(team);
-          io.to(team.captain).emit('captainPick', {
-            category: round.question.category, difficulty: round.question.difficulty, timer: round.timerValue,
-            unansweredMembers: eligibleMembers
-          });
-        }
-      } else {
-        const round = game.activeRound;
-        if (round && !round.assignedPlayers[teamId]) {
-          const firstMember = team.members[0];
-          round.assignedPlayers[teamId] = firstMember;
-          game.players[firstMember].answeredCount++;
-        }
-      }
-    }
-  } else if (game.phase === 'active_round') {
-    const round = game.activeRound;
-    if (round && round.assignedPlayers[teamId] === socketId && !round.answers[teamId]) {
-      if (activeMembers.length > 0) {
-        const nextPlayerId = activeMembers[0];
-        round.assignedPlayers[teamId] = nextPlayerId;
-        
-        const qData = {
-          question: round.question.question, options: round.question.options,
-          category: round.question.category, difficulty: round.question.difficulty,
-          timer: round.timerValue, type: round.question.type || 'multi',
-        };
-        if (round.question.fen) qData.fen = round.question.fen;
-        if (round.question.grid1) { qData.grid1 = round.question.grid1; qData.grid2 = round.question.grid2; }
-        
-        io.to(nextPlayerId).emit('yourQuestion', qData);
-        console.log(`🎯 Cevaplama yetkisi ${player.name} koptuğu için ${game.players[nextPlayerId].name} oyuncusuna devredildi.`);
-        
-        team.members.forEach(pid => {
-          if (pid !== nextPlayerId) {
-            io.to(pid).emit('waitingFor', {
-              playerName: game.players[nextPlayerId]?.name || 'Takım Arkadaşın',
-              teamId, category: round.question.category, difficulty: round.question.difficulty,
+    if (game.phase === 'captain_pick') {
+      if (team.captain === socketId) {
+        if (activeMembers.length > 0) {
+          team.captain = activeMembers[0];
+          game.players[activeMembers[0]].isCaptain = true;
+          console.log(`👑 Yeni kaptan atandı: ${game.players[activeMembers[0]].name}`);
+
+          const round = game.activeRound;
+          if (round) {
+            const eligibleMembers = getEligibleMembers(team);
+            io.to(team.captain).emit('captainPick', {
+              category: round.question.category, difficulty: round.question.difficulty, timer: round.timerValue,
+              unansweredMembers: eligibleMembers
             });
           }
-        });
-      } else {
-        console.log(`⚠️ ${teamId} takımında aktif oyuncu kalmadığı için otomatik timeout cevabı girildi.`);
-        round.answers[teamId] = {
-          isCorrect: false, points: -5, playerName: player.name,
-          teamScore: team.score, answerIndex: -1, status: 'timeout', timeTaken: round.timerMax
-        };
-        team.score = Math.max(0, team.score - 5);
-        
-        if (Object.keys(round.answers).length >= Object.keys(game.teams).length) {
-          evaluateRound();
+        } else {
+          const round = game.activeRound;
+          if (round && !round.assignedPlayers[teamId]) {
+            const firstMember = team.members[0];
+            round.assignedPlayers[teamId] = firstMember;
+            game.players[firstMember].answeredCount++;
+          }
+        }
+      }
+    } else if (game.phase === 'active_round') {
+      const round = game.activeRound;
+      if (round && round.assignedPlayers[teamId] === socketId && !round.answers[teamId]) {
+        if (activeMembers.length > 0) {
+          const nextPlayerId = activeMembers[0];
+          round.assignedPlayers[teamId] = nextPlayerId;
+
+          const qData = {
+            question: round.question.question, options: round.question.options,
+            category: round.question.category, difficulty: round.question.difficulty,
+            timer: round.timerValue, type: round.question.type || 'multi',
+          };
+          if (round.question.fen) qData.fen = round.question.fen;
+          if (round.question.grid1) { qData.grid1 = round.question.grid1; qData.grid2 = round.question.grid2; }
+
+          io.to(nextPlayerId).emit('yourQuestion', qData);
+          console.log(`🎯 Cevaplama yetkisi ${player.name} koptuğu için ${game.players[nextPlayerId].name} oyuncusuna devredildi.`);
+
+          team.members.forEach(pid => {
+            if (pid !== nextPlayerId) {
+              io.to(pid).emit('waitingFor', {
+                playerName: game.players[nextPlayerId]?.name || 'Takım Arkadaşın',
+                teamId, category: round.question.category, difficulty: round.question.difficulty,
+              });
+            }
+          });
+        } else {
+          console.log(`⚠️ ${teamId} takımında aktif oyuncu kalmadığı için otomatik timeout cevabı girildi.`);
+          round.answers[teamId] = {
+            isCorrect: false, points: -5, playerName: player.name,
+            teamScore: team.score, answerIndex: -1, status: 'timeout', timeTaken: round.timerMax
+          };
+          team.score = Math.max(0, team.score - 5);
+
+          if (Object.keys(round.answers).length >= Object.keys(game.teams).length) {
+            evaluateRound();
+          }
         }
       }
     }
   }
-}
 
   socket.on('disconnect', () => {
     const player = game.players[socket.id];
